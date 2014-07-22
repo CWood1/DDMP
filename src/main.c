@@ -4,6 +4,7 @@
 
 #include "recv.h"
 #include "send.h"
+#include "dhcplease.h"
 
 int main(int argc, char** argv) {
 	if(argc != 2) {
@@ -12,6 +13,8 @@ int main(int argc, char** argv) {
 	} else {
 		if(strcmp(argv[1], "send") == 0) {
 			sendHeartbeat();
+		} else if(strcmp(argv[1], "lease") == 0) {
+			initDhcpLease();
 		} else {
 			recvHeartbeats();
 		}
