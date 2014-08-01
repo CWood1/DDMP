@@ -1,6 +1,6 @@
 #ifndef __SEND_H__
 #define __SEND_H__
 
-void sendHeartbeat();
+void* txmain(void*);
 
 #endif

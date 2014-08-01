@@ -1,6 +1,6 @@
 #ifndef __RECV_H__
 #define __RECV_H__
 
-void recvHeartbeats();
+void* rxmain(void*);
 
 #endif
