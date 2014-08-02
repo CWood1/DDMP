@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <errno.h>
 
 void* rxmain(void* stream) {
 	int sd, rc;
@@ -41,27 +42,28 @@ void* rxmain(void* stream) {
 
 	while(1) {
 		int senderaddrlen = sizeof(senderaddr);
-		rc = recvfrom(sd, (char*)buffer, sizeof(buffer), 0, (struct sockaddr*)&senderaddr,
-			&senderaddrlen);
+		rc = recvfrom(sd, (char*)buffer, sizeof(buffer), MSG_DONTWAIT,
+			(struct sockaddr*)&senderaddr, &senderaddrlen);
 
-		if(rc < 0) {
+		if(rc < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
 			perror("recvfrom error");
 			close(sd);
 			pthread_exit(NULL);
-		}
+		} else if(rc >= 0) {
+			printf("Heartbeat received (%s):\n\t%s\n",
+				inet_ntoa(senderaddr.sin_addr), buffer);
 
-		printf("Heartbeat received (%s):\n\t%s\n", inet_ntoa(senderaddr.sin_addr), buffer);
+			if(strcmp(buffer, "heartbeat") == 0) {
+				strcpy(buffer, "reply");
 
-		if(strcmp(buffer, "heartbeat") == 0) {
-			strcpy(buffer, "reply");
+				rc = sendto(sd, (char*)buffer, sizeof(buffer), 0,
+					(struct sockaddr*)&senderaddr, senderaddrlen);
 
-			rc = sendto(sd, (char*)buffer, sizeof(buffer), 0,
-				(struct sockaddr*)&senderaddr, senderaddrlen);
-
-			if(rc < 0) {
-				perror("sendto error");
-				close(sd);
-				pthread_exit(NULL);
+				if(rc < 0) {
+					perror("sendto error");
+					close(sd);
+					pthread_exit(NULL);
+				}
 			}
 		}
 
