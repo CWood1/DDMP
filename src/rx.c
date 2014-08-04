@@ -1,6 +1,7 @@
 #include "rx.h"
 #include "common.h"
 #include "stream.h"
+#include "proto.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,20 +51,39 @@ void* rxmain(void* stream) {
 			close(sd);
 			pthread_exit(NULL);
 		} else if(rc >= 0) {
-			printf("Heartbeat received (%s):\n\t%s\n",
-				inet_ntoa(senderaddr.sin_addr), buffer);
+			if(isHeartbeatOrResponse((char*)buffer) == 0) {
+				printf("Heartbeat received (%s):\n",
+					inet_ntoa(senderaddr.sin_addr));
 
-			if(strcmp(buffer, "heartbeat") == 0) {
-				strcpy(buffer, "reply");
+				heartbeat* h = deserializeHeartbeat((char*)buffer);
+				printHeartbeat(h);
+				free(h->s);
+				free(h);
 
-				rc = sendto(sd, (char*)buffer, sizeof(buffer), 0,
+				int size;
+
+				response* r = craftResponse(h);
+				char* b = serializeResponse(r, &size);
+
+				rc = sendto(sd, b, size, 0,
 					(struct sockaddr*)&senderaddr, senderaddrlen);
+
+				free(r);
+				free(b);
 
 				if(rc < 0) {
 					perror("sendto error");
 					close(sd);
 					pthread_exit(NULL);
 				}
+			} else {
+				printf("Response received (%s):\n",
+					inet_ntoa(senderaddr.sin_addr));
+
+				response* r = deserializeResponse((char*)buffer);
+				printResponse(r);
+				free(r->s);
+				free(r);
 			}
 		}
 

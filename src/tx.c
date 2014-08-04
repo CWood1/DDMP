@@ -1,6 +1,7 @@
 #include "tx.h"
 #include "common.h"
 #include "stream.h"
+#include "proto.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +17,6 @@
 void* txmain(void* stream) {
 	int sd, rc;
 	struct sockaddr_in bcastaddr, directaddr;
-	char buffer[100];
 	int bcastFlag = 0;
 
 	tStream* cmdStream = (tStream*) stream;
@@ -28,9 +28,6 @@ void* txmain(void* stream) {
 	if(strcmp(bcastActive, "1") == 0) {
 		bcastFlag = 1;
 	}
-
-	memset(buffer, 0, sizeof(buffer));
-	memcpy(buffer, "Heartbeat", strlen("Heartbeat"));
 
 	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket error");
@@ -63,9 +60,20 @@ void* txmain(void* stream) {
 	}
 
 	while(1) {
+		heartbeat* h;
+		char* buffer;
+		int length;
+
 		if(bcastFlag == 1) {
-			rc = sendto(sd, (char*)buffer, sizeof(buffer), 0,
+			h = craftHeartbeat(1);
+			buffer = serializeHeartbeat(h, &length);
+
+			rc = sendto(sd, buffer, length, 0,
 				(struct sockaddr*)&bcastaddr, sizeof(bcastaddr));
+
+			free(buffer);
+			free(h);
+				// This will be done properly, in proto.c, later
 
 			if(rc < 0) {
 				perror("Unable to send broadcast heartbeat");
@@ -74,8 +82,14 @@ void* txmain(void* stream) {
 			}
 		}
 
-		rc = sendto(sd, (char*) buffer, sizeof(buffer), 0, (struct sockaddr*)&directaddr,
+		h = craftHeartbeat(0);
+		buffer = serializeHeartbeat(h, &length);
+
+		rc = sendto(sd, buffer, length, 0, (struct sockaddr*)&directaddr,
 			sizeof(directaddr));
+
+		free(buffer);
+		free(h);
 
 		if(rc < 0) {
 			perror("Unable to send direct heartbeat");
