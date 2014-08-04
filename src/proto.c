@@ -40,7 +40,7 @@ response* craftResponse(heartbeat* h) {
 }
 
 char* serializeResponse(response* r, int* length) {
-	*length = strlen(r->s);
+	*length = strlen(r->s) + 1;
 	return r->s;
 }
 

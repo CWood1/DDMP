@@ -57,8 +57,6 @@ void* rxmain(void* stream) {
 
 				heartbeat* h = deserializeHeartbeat((char*)buffer);
 				printHeartbeat(h);
-				free(h->s);
-				free(h);
 
 				int size;
 
@@ -66,8 +64,10 @@ void* rxmain(void* stream) {
 				char* b = serializeResponse(r, &size);
 
 				rc = sendto(sd, b, size, 0,
-					(struct sockaddr*)&senderaddr, senderaddrlen);
+					(struct sockaddr*)&senderaddr, sizeof(senderaddr));
 
+				free(h->s);
+				free(h);
 				free(r);
 				free(b);
 
@@ -76,6 +76,8 @@ void* rxmain(void* stream) {
 					close(sd);
 					pthread_exit(NULL);
 				}
+
+				printf("%d\n", rc);
 			} else {
 				printf("Response received (%s):\n",
 					inet_ntoa(senderaddr.sin_addr));
