@@ -16,7 +16,7 @@
 
 void* rxmain(void* stream) {
 	int sd, rc;
-	struct sockaddr_in selfaddr, senderaddr;
+	struct sockaddr_in selfaddr, senderaddr, replyaddr;
 		// Structs for the sender of the heartbeat, and receiver of the heartbeat
 
 	char buffer[100];
@@ -35,6 +35,10 @@ void* rxmain(void* stream) {
 	selfaddr.sin_port = htons(PORT);
 	selfaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
+	memset(&replyaddr, 0, sizeof(replyaddr));
+	replyaddr.sin_family = AF_INET;
+	replyaddr.sin_port = htons(PORT);
+
 	if((rc = bind(sd, (struct sockaddr*)&selfaddr, sizeof(selfaddr))) < 0) {
 		perror("Heartbeat receive - bind error.");
 		close(sd);
@@ -51,9 +55,12 @@ void* rxmain(void* stream) {
 			close(sd);
 			pthread_exit(NULL);
 		} else if(rc >= 0) {
+			printf("%s\n", buffer);
 			if(isHeartbeat((char*)buffer)) {
 				printf("Heartbeat received (%s):\n",
 					inet_ntoa(senderaddr.sin_addr));
+
+				replyaddr.sin_addr.s_addr = senderaddr.sin_addr.s_addr;
 
 				heartbeat* h = deserializeHeartbeat((char*)buffer);
 				printHeartbeat(h);
@@ -64,7 +71,7 @@ void* rxmain(void* stream) {
 				char* b = serializeResponse(r, &size);
 
 				rc = sendto(sd, b, size, 0,
-					(struct sockaddr*)&senderaddr, sizeof(senderaddr));
+					(struct sockaddr*)&replyaddr, sizeof(replyaddr));
 
 				free(h->s);
 				free(h);
