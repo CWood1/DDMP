@@ -51,7 +51,7 @@ void* rxmain(void* stream) {
 			close(sd);
 			pthread_exit(NULL);
 		} else if(rc >= 0) {
-			if(isHeartbeatOrResponse((char*)buffer) == 0) {
+			if(isHeartbeat((char*)buffer)) {
 				printf("Heartbeat received (%s):\n",
 					inet_ntoa(senderaddr.sin_addr));
 

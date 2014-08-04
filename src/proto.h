@@ -19,6 +19,6 @@ char* serializeResponse(response*, int*);
 response* deserializeResponse(char*);
 void printResponse(response*);
 
-int isHeartbeatOrResponse(char*);
+int isHeartbeat(char*);
 
 #endif
