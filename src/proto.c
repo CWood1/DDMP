@@ -27,7 +27,7 @@ void printHeartbeat(heartbeat* h) {
 	printf("\t%s\n", h->s);
 }
 
-bool isHeartbeat(char* c) {
+int isHeartbeat(char* c) {
 return strcmp(c, "heartbeat");
 }
 
