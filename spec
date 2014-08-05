@@ -1,5 +1,5 @@
 Mesh Extensions to DHCP
-Version 0.3.1
+Version 0.3.2
 Last updated: 18/07/14
 DRAFT
 
@@ -8,6 +8,7 @@ Changelog
 17/07/14 - Some inconsistencies and ambiguities cleaned up, fields reorganized in heartbeat - Connor Wood (connorwood71@gmail.com)
 18/07/14 - Added new field, to indicate if message is heartbeat pulse or heartbeat response, and fixed technical error: an octet is a byte, you fucking nimrod - Connor Wood (connorwood71@gmail.com)
 05/08/14 - IP address fields unneeded in messages, provided by system already - Connor Wood (connorwood71@gmail.com)
+05/08/14 - Cleaned up more IP address field remnants - Connor Wood (connorwood71@gmail.com)
 
 Authors
 Connor Wood (connorwood71@gmail.com)
@@ -32,7 +33,7 @@ The heartbeat format is as below:
 | IDENT | FLAGS | MAGIC | OPTIONS |
 +-------+-------+-------+---------+
 
-Ident should be 0, to indicate a heartbeat pulse. The Sender field identifies the IP address of the server sending the heartbeat. The flags field is as follows:
+Ident should be 0, to indicate a heartbeat pulse. The flags field is as follows:
              1111111111222222222233
  0 1 234567890123456789012345678901
 +-+-+------------------------------+
@@ -50,12 +51,12 @@ The Leaselen and Leases fields represent the length of the lease file in octets,
 Numnodes indicates the number of nodes on the network, and Nodelist is the IP of each node, sorted into order of failover. In this way, every node has a full copy of the node list, sorted to priority order, to be used in the event of node failure.
 
 The Magic number is to be set to a random number at send time, to be echoed back. The response to this packet is as follows:
-    0        1-4      5-8    9-12
-+-------+----------+-------+-------+--------+
-| IDENT | RECEIVER | FLAGS | MAGIC | ACTIVE |
-+-------+----------+-------+-------+--------+
+    0      1-4     5-8
++-------+-------+-------+--------+
+| IDENT | FLAGS | MAGIC | ACTIVE |
++-------+-------+-------+--------+
 
-Ident should be 1, to indicate a response. The Receiver field indicates the receiver of the heartbeat; the Magic field is a copy of the magic number sent in the initial packet. The Flags field is defined as below:
+Ident should be 1, to indicate a response; the Magic field is a copy of the magic number sent in the initial packet. The Flags field is defined as below:
 
              1111111111222222222233
  0 1 234567890123456789012345678901
