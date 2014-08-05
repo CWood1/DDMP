@@ -1,5 +1,5 @@
 Mesh Extensions to DHCP
-Version 0.3
+Version 0.3.1
 Last updated: 18/07/14
 DRAFT
 
@@ -7,6 +7,7 @@ Changelog
 16/07/14 - Initial draft written - Connor Wood (connorwood71@gmail.com)
 17/07/14 - Some inconsistencies and ambiguities cleaned up, fields reorganized in heartbeat - Connor Wood (connorwood71@gmail.com)
 18/07/14 - Added new field, to indicate if message is heartbeat pulse or heartbeat response, and fixed technical error: an octet is a byte, you fucking nimrod - Connor Wood (connorwood71@gmail.com)
+05/08/14 - IP address fields unneeded in messages, provided by system already - Connor Wood (connorwood71@gmail.com)
 
 Authors
 Connor Wood (connorwood71@gmail.com)
@@ -26,10 +27,10 @@ The Position field gives the position of the node in the global list, used to de
 It is assumed that, upon successful configuration, the current node is to begin directing its heartbeat at the active DHCP server. In this sense, a circular buffer is maintained, in priority order, of which nodes are to assume control of the DHCP responsibility, in the event of node failure.
 
 The heartbeat format is as below:
-    0      1-4      5-8    9-12
-+-------+--------+-------+-------+---------+
-| IDENT | SENDER | FLAGS | MAGIC | OPTIONS |
-+-------+--------+-------+-------+---------+
+    0      1-4     5-8
++-------+-------+-------+---------+
+| IDENT | FLAGS | MAGIC | OPTIONS |
++-------+-------+-------+---------+
 
 Ident should be 0, to indicate a heartbeat pulse. The Sender field identifies the IP address of the server sending the heartbeat. The flags field is as follows:
              1111111111222222222233
