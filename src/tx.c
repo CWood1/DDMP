@@ -71,6 +71,9 @@ void* txmain(void* stream) {
 			rc = sendto(sd, buffer, length, 0,
 				(struct sockaddr*)&bcastaddr, sizeof(bcastaddr));
 
+			printf("Sending heartbeat:\n");
+			printHeartbeat(h);
+
 			free(buffer);
 			free(h);
 				// This will be done properly, in proto.c, later
