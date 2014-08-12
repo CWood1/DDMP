@@ -85,9 +85,8 @@ void* rxmain(void* stream) {
 				printf("Response received (%s):\n",
 					inet_ntoa(senderaddr.sin_addr));
 
-				response* r = deserializeResponse((char*)buffer);
+				response* r = deserializeResponse((char*)buffer, rc);
 				printResponse(r);
-				free(r->s);
 				free(r);
 			}
 		}

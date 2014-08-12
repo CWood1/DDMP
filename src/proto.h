@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 typedef struct {
-	int filelen;
+	uint32_t filelen;
 	char* file;
 } leasefile;
 
@@ -23,7 +23,13 @@ typedef struct {
 } heartbeat;
 
 typedef struct {
-	char* s;
+	uint8_t ident;
+	uint32_t flags;
+	uint32_t magic;
+
+	uint32_t numnodes;
+	uint8_t shutdown;
+		// Only ever used if D flag is set
 } response;
 
 heartbeat* craftHeartbeat(int);
@@ -33,7 +39,7 @@ void printHeartbeat(heartbeat*);
 
 response* craftResponse(heartbeat*);
 char* serializeResponse(response*, int*);
-response* deserializeResponse(char*);
+response* deserializeResponse(char*, int);
 void printResponse(response*);
 
 int isHeartbeat(char*, int);
