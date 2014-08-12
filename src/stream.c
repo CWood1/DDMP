@@ -19,8 +19,8 @@ void stream_send(tStream* stream, char* message, int len) {
 	pthread_mutex_lock(stream->mut);
 
 	stream->stream = malloc(len);
-	strcpy(stream->stream, message);
-	stream->dataInStream = 1;
+	memcpy(stream->stream, message, len);
+	stream->dataInStream = len;
 
 	stream->lastWrite = pthread_self();
 
@@ -28,43 +28,79 @@ void stream_send(tStream* stream, char* message, int len) {
 	pthread_cond_signal(stream->cond);
 }
 
-char* stream_rcv(tStream* stream) {
-	pthread_mutex_lock(stream->mut);
-	if(stream->dataInStream == 0) pthread_cond_wait(stream->cond, stream->mut);
-	if(pthread_equal(stream->lastWrite, pthread_self())) pthread_cond_wait(stream->cond, stream->mut);
-
-	char* message;
-	message = malloc(strlen(stream->stream) + 1);
-	strcpy(message, stream->stream);
-
-	stream->dataInStream = 0;
-	free(stream->stream);
-
-	pthread_mutex_unlock(stream->mut);
-	return message;
+int stream_length(tStream* stream) {
+	return stream->dataInStream;
 }
 
-char* stream_rcv_nblock(tStream* stream) {
+int stream_rcv(tStream* stream, int length, char* dest) {
 	pthread_mutex_lock(stream->mut);
-	if(stream->dataInStream == 0) {
-	       pthread_mutex_unlock(stream->mut);
-       	       return NULL;
+
+	if(stream->dataInStream == 0)
+		pthread_cond_wait(stream->cond, stream->mut);
+	if(pthread_equal(stream->lastWrite, pthread_self()))
+		pthread_cond_wait(stream->cond, stream->mut);
+
+	if(length == 0) {
+		length = stream->dataInStream;
+		memcpy(dest, stream->stream, stream->dataInStream);
+		stream->dataInStream = 0;
+	} else {
+		memcpy(dest, stream->stream, length);
+
+		if(length != stream->dataInStream) {
+			stream->dataInStream -= length;
+
+			char* message = malloc(stream->dataInStream);
+			memcpy(message, stream->stream + length, stream->dataInStream);
+
+			free(stream->stream);
+			stream->stream = message;
+		} else {
+			stream->dataInStream = 0;
+			free(stream->stream);
+		}
 	}
-
-	if(pthread_equal(stream->lastWrite, pthread_self())) {
-	       pthread_mutex_unlock(stream->mut);
-       	       return NULL;
-	}
-
-	char* message;
-	message = malloc(strlen(stream->stream) + 1);
-	strcpy(message, stream->stream);
-
-	stream->dataInStream = 0;
-	free(stream->stream);
 
 	pthread_mutex_unlock(stream->mut);
-	return message;
+	return length;
+}
+
+int stream_rcv_nblock(tStream* stream, int length, char* dest) {
+        pthread_mutex_lock(stream->mut);
+
+        if(stream->dataInStream == 0) {
+                pthread_mutex_unlock(stream->mut);
+		return 0;
+	}
+
+        if(pthread_equal(stream->lastWrite, pthread_self())) {
+		pthread_mutex_unlock(stream->mut);
+		return 0;
+	}
+
+        if(length == 0) {
+                length = stream->dataInStream;
+                memcpy(dest, stream->stream, stream->dataInStream);
+                stream->dataInStream = 0;
+        } else {
+                memcpy(dest, stream->stream, length);
+
+                if(length != stream->dataInStream) {
+                        stream->dataInStream -= length;
+
+                        char* message = malloc(stream->dataInStream);
+                        memcpy(message, stream->stream + length, stream->dataInStream);
+
+                        free(stream->stream);
+                        stream->stream = message;
+                } else {
+                        stream->dataInStream = 0;
+                        free(stream->stream);
+                }
+        }
+
+        pthread_mutex_unlock(stream->mut);
+        return length;
 }
 
 void stream_wait(tStream* stream) {
@@ -75,4 +111,16 @@ void stream_wait(tStream* stream) {
 		if(stream->dataInStream == 0) Done = 1;
 		pthread_mutex_unlock(stream->mut);
 	}
+}
+
+int stream_wait_full(tStream* stream) {
+	char d = 0;
+
+	while(d == 0) {
+		pthread_mutex_lock(stream->mut);
+		if(stream->dataInStream != 0) d = 1;
+		pthread_mutex_unlock(stream->mut);
+	}
+
+	return stream->dataInStream;
 }

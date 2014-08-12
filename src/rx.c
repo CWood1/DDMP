@@ -91,8 +91,11 @@ void* rxmain(void* stream) {
 			}
 		}
 
-		char* cmd = stream_rcv_nblock(cmdStream);
-		if(cmd != NULL) {
+		int size = stream_length(cmdStream);
+		if(size != 0) {
+			char* cmd = malloc(stream_wait_full(cmdStream));
+			stream_rcv(cmdStream, 0, cmd);
+
 			char* t = strtok(cmd, " ");
 
 			if(strcmp(t, "shutdown") == 0) {

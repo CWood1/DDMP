@@ -20,9 +20,13 @@ void* txmain(void* stream) {
 	int bcastFlag = 0;
 
 	tStream* cmdStream = (tStream*) stream;
-	char* str_bcastaddr = stream_rcv(cmdStream);
-	char* str_directaddr = stream_rcv(cmdStream);
-	char* bcastActive = stream_rcv(cmdStream);
+
+	char* str_bcastaddr = malloc(stream_wait_full(cmdStream));
+	stream_rcv(cmdStream, 0, str_bcastaddr);
+	char* str_directaddr = malloc(stream_wait_full(cmdStream));
+	stream_rcv(cmdStream, 0, str_directaddr);
+	char* bcastActive = malloc(stream_wait_full(cmdStream));
+	stream_rcv(cmdStream, 0, bcastActive);
 		// Get the options from CT
 
 	if(strcmp(bcastActive, "1") == 0) {
@@ -100,8 +104,11 @@ void* txmain(void* stream) {
 			pthread_exit(NULL);
 		}
 
-		char* cmd = stream_rcv_nblock(cmdStream);
-		if(cmd != NULL) {
+		int size = stream_length(cmdStream);
+		if(size != NULL) {
+			char* cmd = malloc(stream_wait_full(cmdStream));
+			stream_rcv(cmdStream, 0, cmd);
+
 			char* t = strtok(cmd, " ");
 
 			if(strcmp(t, "shutdown") == 0) {
