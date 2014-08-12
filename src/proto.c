@@ -94,7 +94,7 @@ response* deserializeResponse(char* s, int length) {
 		return NULL;
 	}
 
-	Response* r = malloc(sizeof(response));
+	response* r = malloc(sizeof(response));
 
 	r->ident = s[0];
 	memcpy(&(r->flags), s + 1, sizeof(r->flags));
