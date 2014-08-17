@@ -28,6 +28,11 @@ void* txmain(void* stream) {
 	char* bcastActive = malloc(stream_wait_full(cmdStream));
 	stream_rcv(cmdStream, 0, bcastActive);
 		// Get the options from CT
+	tStream** pPcStream = malloc(stream_wait_full(cmdStream));
+	stream_rcv(cmdStream, 0, (char*)pPcStream);
+
+	tStream* pcStream = *pPcStream;
+	free(pPcStream);
 
 	if(strcmp(bcastActive, "1") == 0) {
 		bcastFlag = 1;
@@ -74,15 +79,12 @@ void* txmain(void* stream) {
 
 			rc = sendto(sd, buffer, length, 0,
 				(struct sockaddr*)&bcastaddr, sizeof(bcastaddr));
-
-			printf("Sending heartbeat:\n");
-			printHeartbeat(h);
-
 			free(buffer);
-			free(h);
-				// This will be done properly, in proto.c, later
+
+			stream_send(pcStream, h, sizeof(heartbeat*));
 
 			if(rc < 0) {
+				// At some point, inform CT about this
 				perror("Unable to send broadcast heartbeat");
 				close(sd);
 				pthread_exit(NULL);
@@ -94,9 +96,9 @@ void* txmain(void* stream) {
 
 		rc = sendto(sd, buffer, length, 0, (struct sockaddr*)&directaddr,
 			sizeof(directaddr));
-
 		free(buffer);
-		free(h);
+
+		stream_send(pcStream, h, sizeof(heartbeat*));
 
 		if(rc < 0) {
 			perror("Unable to send direct heartbeat");

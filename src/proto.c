@@ -12,6 +12,10 @@ heartbeat* craftHeartbeat(int active) {
 
 	h->ident = 0;
 	h->flags = 0;
+
+	if(active == 1) {
+		h->flags |= FLAG_ACTIVE;
+	}
 	
 	int random = open("/dev/urandom", O_RDONLY);
 	read(random, &(h->magic), sizeof(h->magic));

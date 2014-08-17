@@ -118,6 +118,11 @@ int stream_wait_full(tStream* stream) {
 
 	while(d == 0) {
 		pthread_mutex_lock(stream->mut);
+
+		if(stream->dataInStream == 0)
+			pthread_cond_wait(stream->cond, stream->mut);
+				// Block until something becomes available
+
 		if(stream->dataInStream != 0) d = 1;
 		pthread_mutex_unlock(stream->mut);
 	}

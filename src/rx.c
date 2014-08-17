@@ -1,4 +1,5 @@
 #include "rx.h"
+#include "pc.h"
 #include "common.h"
 #include "stream.h"
 #include "proto.h"
@@ -23,7 +24,12 @@ void* rxmain(void* stream) {
 		// TODO: Clean up size here, to maximum needed size
 
 	tStream* cmdStream = (tStream*)stream;
-		// We don't need any params from this to start with
+
+	tStream** pPcStream = malloc(stream_wait_full(cmdStream));
+	stream_rcv(cmdStream, 0, (char*)pPcStream);
+
+	tStream* pcStream = *pPcStream;
+	free(pPcStream);
 
 	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("Heartbeat receive - socket error.");
@@ -55,7 +61,15 @@ void* rxmain(void* stream) {
 			close(sd);
 			pthread_exit(NULL);
 		} else if(rc >= 0) {
-			if(isHeartbeat((char*)buffer, rc)) {
+			message* m = malloc(sizeof(message));
+			m->buffer = malloc(rc);
+			memcpy(m->buffer, (void*)buffer, rc);
+			m->addrv4 = senderaddr.sin_addr.s_addr;
+			m->bufferSize = rc;
+			
+			stream_send(pcStream, (char*)m, sizeof(message));
+
+/*			if(isHeartbeat((char*)buffer, rc)) {
 				printf("Heartbeat received (%s):\n",
 					inet_ntoa(senderaddr.sin_addr));
 
@@ -63,6 +77,8 @@ void* rxmain(void* stream) {
 
 				heartbeat* h = deserializeHeartbeat((char*)buffer, rc);
 				printHeartbeat(h);
+
+				stream_send(pcStream, h, sizeof(heartbeat*));
 
 				int size;
 
@@ -72,7 +88,6 @@ void* rxmain(void* stream) {
 				rc = sendto(sd, b, size, 0,
 					(struct sockaddr*)&replyaddr, sizeof(replyaddr));
 
-				free(h);
 				free(r);
 				free(b);
 
@@ -88,7 +103,7 @@ void* rxmain(void* stream) {
 				response* r = deserializeResponse((char*)buffer, rc);
 				printResponse(r);
 				free(r);
-			}
+			}*/
 		}
 
 		int size = stream_length(cmdStream);

@@ -32,6 +32,9 @@ typedef struct {
 		// Only ever used if D flag is set
 } response;
 
+#define FLAG_ACTIVE 1
+#define FLAG_SHUTDOWN 2
+
 heartbeat* craftHeartbeat(int);
 char* serializeHeartbeat(heartbeat*, int*);
 heartbeat* deserializeHeartbeat(char*, int);
