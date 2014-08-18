@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "stream.h"
 
@@ -12,52 +13,103 @@ void stream_init(tStream* stream) {
 	pthread_cond_init(stream->cond, NULL);
 	pthread_mutex_init(stream->mut,  NULL);
 
-	stream->dataInStream = 0;
+	stream->data = NULL;
 }
 
 void stream_send(tStream* stream, char* message, int len) {
 	pthread_mutex_lock(stream->mut);
 
-	stream->stream = malloc(len);
-	memcpy(stream->stream, message, len);
-	stream->dataInStream = len;
+	if(stream->data == NULL) {
+		stream->data = malloc(sizeof(tMessage));
+		stream->data->data = malloc(len);
+		memcpy(stream->data->data, message, len);
+		stream->data->next = NULL;
+		stream->data->prev = NULL;
+		stream->data->size = len;
+		stream->data->writer = pthread_self();
+	} else {
+		tMessage* cur = stream->data;
 
-	stream->lastWrite = pthread_self();
+		while(cur->next != NULL) {
+			cur = cur->next;
+		}
+
+		cur->next = malloc(sizeof(tMessage));
+		cur->next->prev = cur;
+		cur = cur->next;
+
+		cur->data = malloc(len);
+		memcpy(cur->data, message, len);
+		cur->size = len;
+		cur->writer = pthread_self();
+		cur->next = NULL;
+	}
 
 	pthread_mutex_unlock(stream->mut);
 	pthread_cond_signal(stream->cond);
 }
 
 int stream_length(tStream* stream) {
-	return stream->dataInStream;
+	if(stream->data != NULL) {
+		return stream->data->size;
+	} else {
+		return 0;
+	}
 }
 
 int stream_rcv(tStream* stream, int length, char* dest) {
 	pthread_mutex_lock(stream->mut);
 
-	if(stream->dataInStream == 0)
+	if(stream->data == NULL)
 		pthread_cond_wait(stream->cond, stream->mut);
-	if(pthread_equal(stream->lastWrite, pthread_self()))
-		pthread_cond_wait(stream->cond, stream->mut);
+
+	tMessage* cur = stream->data;
+	while(pthread_equal(cur->writer, pthread_self())) {
+		if(cur->next) {
+			cur = cur->next;
+		} else {
+			pthread_cond_wait(stream->cond, stream->mut);
+		}
+	}
 
 	if(length == 0) {
-		length = stream->dataInStream;
-		memcpy(dest, stream->stream, stream->dataInStream);
-		stream->dataInStream = 0;
+		length = cur->size;
+		memcpy(dest, cur->data, cur->size);
+
+		if(cur->next)
+			cur->next->prev = cur->prev;
+
+		if(cur->prev)
+			cur->prev->next = cur->next;
+
+		if(cur == stream->data)
+			stream->data = cur->next;
+
+		free(cur->data);
+		free(cur);
 	} else {
-		memcpy(dest, stream->stream, length);
+		memcpy(dest, cur->data, length);
 
-		if(length != stream->dataInStream) {
-			stream->dataInStream -= length;
+		if(length != cur->size) {
+			cur->size -= length;
 
-			char* message = malloc(stream->dataInStream);
-			memcpy(message, stream->stream + length, stream->dataInStream);
+			char* message = malloc(cur->size);
+			memcpy(message, cur->data + length, cur->size);
 
-			free(stream->stream);
-			stream->stream = message;
+			free(cur->data);
+			cur->data = message;
 		} else {
-			stream->dataInStream = 0;
-			free(stream->stream);
+			if(cur->next)
+				cur->next->prev = cur->prev;
+
+			if(cur->prev)
+				cur->prev->next = cur->next;
+
+			if(cur == stream->data)
+				stream->data = cur->next;
+
+			free(cur->data);
+			free(cur);
 		}
 	}
 
@@ -66,66 +118,83 @@ int stream_rcv(tStream* stream, int length, char* dest) {
 }
 
 int stream_rcv_nblock(tStream* stream, int length, char* dest) {
-        pthread_mutex_lock(stream->mut);
+	pthread_mutex_lock(stream->mut);
 
-        if(stream->dataInStream == 0) {
-                pthread_mutex_unlock(stream->mut);
-		return 0;
-	}
-
-        if(pthread_equal(stream->lastWrite, pthread_self())) {
+	if(stream->data == NULL) {
 		pthread_mutex_unlock(stream->mut);
 		return 0;
 	}
 
-        if(length == 0) {
-                length = stream->dataInStream;
-                memcpy(dest, stream->stream, stream->dataInStream);
-                stream->dataInStream = 0;
-        } else {
-                memcpy(dest, stream->stream, length);
+	tMessage* cur = stream->data;
+	while(pthread_equal(cur->writer, pthread_self())) {
+		if(cur->next) {
+			cur = cur->next;
+		} else {
+			pthread_mutex_unlock(stream->mut);
+			return 0;
+		}
+	}
 
-                if(length != stream->dataInStream) {
-                        stream->dataInStream -= length;
+	if(length == 0) {
+		length = cur->size;
+		memcpy(dest, cur->data, cur->size);
 
-                        char* message = malloc(stream->dataInStream);
-                        memcpy(message, stream->stream + length, stream->dataInStream);
+		if(cur->next)
+			cur->next->prev = cur->prev;
 
-                        free(stream->stream);
-                        stream->stream = message;
-                } else {
-                        stream->dataInStream = 0;
-                        free(stream->stream);
-                }
-        }
+		if(cur->prev)
+			cur->prev->next = cur->next;
 
-        pthread_mutex_unlock(stream->mut);
-        return length;
+		if(cur == stream->data)
+			stream->data = cur->next;
+
+		free(cur->data);
+		free(cur);
+	} else {
+		memcpy(dest, cur->data, length);
+
+		if(length != cur->size) {
+			cur->size -= length;
+
+			char* message = malloc(cur->size);
+			memcpy(message, cur->data + length, cur->size);
+
+			free(cur->data);
+			cur->data = message;
+		} else {
+			if(cur->next)
+				cur->next->prev = cur->prev;
+
+			if(cur->prev)
+				cur->prev->next = cur->next;
+
+			if(stream->data == cur)
+				stream->data = cur->next;
+
+			free(cur->data);
+			free(cur);
+		}
+	}
+
+	pthread_mutex_unlock(stream->mut);
+	return length;
 }
 
 void stream_wait(tStream* stream) {
-	char Done = 0;
+	uint8_t d = 0;
 
-	while(Done == 0) {
+	while(d == 0) {
 		pthread_mutex_lock(stream->mut);
-		if(stream->dataInStream == 0) Done = 1;
+		if(stream->data == NULL) d = 1;
 		pthread_mutex_unlock(stream->mut);
 	}
 }
 
 int stream_wait_full(tStream* stream) {
-	char d = 0;
+	pthread_mutex_lock(stream->mut);
+	if(stream->data == NULL)
+		pthread_cond_wait(stream->cond, stream->mut);
+	pthread_mutex_unlock(stream->mut);
 
-	while(d == 0) {
-		pthread_mutex_lock(stream->mut);
-
-		if(stream->dataInStream == 0)
-			pthread_cond_wait(stream->cond, stream->mut);
-				// Block until something becomes available
-
-		if(stream->dataInStream != 0) d = 1;
-		pthread_mutex_unlock(stream->mut);
-	}
-
-	return stream->dataInStream;
+	return stream->data->size;
 }

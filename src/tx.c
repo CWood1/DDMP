@@ -1,4 +1,5 @@
 #include "tx.h"
+#include "pc.h"
 #include "common.h"
 #include "stream.h"
 #include "proto.h"
@@ -81,7 +82,13 @@ void* txmain(void* stream) {
 				(struct sockaddr*)&bcastaddr, sizeof(bcastaddr));
 			free(buffer);
 
-			stream_send(pcStream, h, sizeof(heartbeat*));
+			lHeartbeat* s = malloc(sizeof(lHeartbeat));
+			s->next = NULL;
+			s->prev = NULL;
+			s->h = h;
+			s->addrv4 = bcastaddr.sin_addr.s_addr;
+
+			stream_send(pcStream, &s, sizeof(lHeartbeat*));
 
 			if(rc < 0) {
 				// At some point, inform CT about this
@@ -98,7 +105,13 @@ void* txmain(void* stream) {
 			sizeof(directaddr));
 		free(buffer);
 
-		stream_send(pcStream, h, sizeof(heartbeat*));
+		lHeartbeat* s = malloc(sizeof(lHeartbeat));
+		s->next = NULL;
+		s->prev = NULL;
+		s->h = h;
+		s->addrv4 = directaddr.sin_addr.s_addr;
+
+		stream_send(pcStream, &s, sizeof(lHeartbeat*));
 
 		if(rc < 0) {
 			perror("Unable to send direct heartbeat");

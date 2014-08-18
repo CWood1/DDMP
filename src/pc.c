@@ -69,15 +69,21 @@ void* pcmain(void* s) {
 
 		size = stream_length(txStream);
 		if(size != 0) {
-			heartbeat** h = malloc(stream_wait_full(txStream));
-			stream_rcv(txStream, 0, (char*) h);
+			lHeartbeat** next = malloc(stream_wait_full(txStream));
+			stream_rcv(txStream, 0, (char*) next);
 
-			sent->h = *h;
-			sent->next = malloc(sizeof(lHeartbeat));
+			sent->next = *next;
 			sent->next->prev = sent;
 			sent = sent->next;
 
-			free(h);
+			free(next);
+
+			replyaddr.sin_addr.s_addr = sent->addrv4;
+				// A kludge, but we need to display this
+
+			printf("Heartbeat sent (%s):\n",
+				inet_ntoa(replyaddr.sin_addr));
+			printHeartbeat(sent->h);
 		}
 
 		size = stream_length(rxStream);

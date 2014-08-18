@@ -2,13 +2,20 @@
 #define __STREAM_H__
 
 #include <pthread.h>
+#include <stdint.h>
+
+typedef struct Message {
+	char* data;
+	int size;
+	struct Message* next;
+	struct Message* prev;
+	pthread_t writer;
+} tMessage;
 
 typedef struct {
-	char* stream;
-	int dataInStream;
+	tMessage* data;
 	pthread_cond_t* cond;
 	pthread_mutex_t* mut;
-	pthread_t lastWrite;
 } tStream;
 
 void stream_init(tStream*);			// Initialize a stream
