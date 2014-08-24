@@ -57,6 +57,7 @@ void stream_send(tStream* stream, char* message, int len) {
 		}
 
 		cur = stream->data;
+		cur->prev = NULL;
 	} else {
 		cur = stream->data;
 		while(cur->next != NULL) {
