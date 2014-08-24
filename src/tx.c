@@ -16,21 +16,22 @@
 #include <pthread.h>
 
 void* txmain(void* stream) {
-	int sd, rc;
+	int sd, rc, len;
 	struct sockaddr_in bcastaddr, directaddr;
 	int bcastFlag = 0;
 
 	tStream* cmdStream = (tStream*) stream;
 
-	char* str_bcastaddr = malloc(stream_wait_full(cmdStream));
-	stream_rcv(cmdStream, 0, str_bcastaddr);
-	char* str_directaddr = malloc(stream_wait_full(cmdStream));
-	stream_rcv(cmdStream, 0, str_directaddr);
-	char* bcastActive = malloc(stream_wait_full(cmdStream));
-	stream_rcv(cmdStream, 0, bcastActive);
-		// Get the options from CT
-	tStream** pPcStream = malloc(stream_wait_full(cmdStream));
-	stream_rcv(cmdStream, 0, (char*)pPcStream);
+	char* str_bcastaddr = stream_rcv(cmdStream, &len);
+	char* str_directaddr = stream_rcv(cmdStream, &len);
+	char* bcastActive = stream_rcv(cmdStream, &len);
+
+	tStream** pPcStream = (tStream**)(stream_rcv(cmdStream, &len));
+
+	if(len != sizeof(tStream*)) {
+		printf("Error setting up TX/PC stream\n");
+		pthread_exit(NULL);
+	}
 
 	tStream* pcStream = *pPcStream;
 	free(pPcStream);
@@ -38,6 +39,8 @@ void* txmain(void* stream) {
 	if(strcmp(bcastActive, "1") == 0) {
 		bcastFlag = 1;
 	}
+
+	free(bcastActive);
 
 	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket error");
@@ -59,6 +62,8 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
+	free(str_bcastaddr);
+
 	memset(&directaddr, 0, sizeof(directaddr));
 	directaddr.sin_family = AF_INET;
 	directaddr.sin_port = htons(PORT);
@@ -68,6 +73,8 @@ void* txmain(void* stream) {
 		perror("Unable to send direct heartbeat");
 		pthread_exit(NULL);
 	}
+
+	free(str_directaddr);
 
 	while(1) {
 		heartbeat* h;
@@ -83,12 +90,20 @@ void* txmain(void* stream) {
 			free(buffer);
 
 			lHeartbeat* s = malloc(sizeof(lHeartbeat));
+
+			if(s == NULL) {
+				printf("malloc error in tx\n");
+				close(sd);
+				pthread_exit(NULL);
+			}
+
 			s->next = NULL;
 			s->prev = NULL;
 			s->h = h;
 			s->addrv4 = bcastaddr.sin_addr.s_addr;
 
-			stream_send(pcStream, &s, sizeof(lHeartbeat*));
+			stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
+			free(s);
 
 			if(rc < 0) {
 				// At some point, inform CT about this
@@ -106,12 +121,20 @@ void* txmain(void* stream) {
 		free(buffer);
 
 		lHeartbeat* s = malloc(sizeof(lHeartbeat));
+
+		if(s == NULL) {
+			printf("malloc error in tx\n");
+			close(sd);
+			pthread_exit(NULL);
+		}
+
 		s->next = NULL;
 		s->prev = NULL;
 		s->h = h;
 		s->addrv4 = directaddr.sin_addr.s_addr;
 
-		stream_send(pcStream, &s, sizeof(lHeartbeat*));
+		stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
+		free(s);
 
 		if(rc < 0) {
 			perror("Unable to send direct heartbeat");
@@ -119,14 +142,13 @@ void* txmain(void* stream) {
 			pthread_exit(NULL);
 		}
 
-		int size = stream_length(cmdStream);
-		if(size != NULL) {
-			char* cmd = malloc(stream_wait_full(cmdStream));
-			stream_rcv(cmdStream, 0, cmd);
+		char* cmd = stream_rcv_nblock(cmdStream, &len);
 
+		if(cmd != NULL) {
 			char* t = strtok(cmd, " ");
 
 			if(strcmp(t, "shutdown") == 0) {
+				free(cmd);
 				printf("tx shutting down.\n");
 				close(sd);
 				pthread_exit(NULL);
@@ -139,6 +161,8 @@ void* txmain(void* stream) {
 					bcastFlag = 0;
 				}
 			}
+
+			free(cmd);
 		}
 
 		usleep(100000);

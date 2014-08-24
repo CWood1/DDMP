@@ -8,7 +8,18 @@
 
 void stream_init(tStream* stream) {
 	stream->cond = malloc(sizeof(pthread_cond_t));
+
+	if(stream->cond == NULL) {
+		printf("malloc error in stream\n");
+		pthread_exit(NULL);
+	}
+
 	stream->mut = malloc(sizeof(pthread_mutex_t));
+
+	if(stream->mut == NULL) {
+		printf("malloc error in stream\n");
+		pthread_exit(NULL);
+	}
 
 	pthread_cond_init(stream->cond, NULL);
 	pthread_mutex_init(stream->mut,  NULL);
@@ -16,48 +27,70 @@ void stream_init(tStream* stream) {
 	stream->data = NULL;
 }
 
+void stream_free(tStream* stream) {
+	free(stream->cond);
+	free(stream->mut);
+
+	if(stream->data != NULL) {
+		tMessage* cur = stream->data;
+
+		while(cur->next != NULL) {
+			cur = cur->next;
+			free(cur->prev);
+		}
+
+		free(cur);
+	}
+}
+
 void stream_send(tStream* stream, char* message, int len) {
 	pthread_mutex_lock(stream->mut);
 
+	tMessage* cur;
+
 	if(stream->data == NULL) {
 		stream->data = malloc(sizeof(tMessage));
-		stream->data->data = malloc(len);
-		memcpy(stream->data->data, message, len);
-		stream->data->next = NULL;
-		stream->data->prev = NULL;
-		stream->data->size = len;
-		stream->data->writer = pthread_self();
-	} else {
-		tMessage* cur = stream->data;
 
+		if(stream->data == NULL) {
+			printf("malloc error in stream\n");
+			pthread_exit(NULL);
+		}
+
+		cur = stream->data;
+	} else {
+		cur = stream->data;
 		while(cur->next != NULL) {
 			cur = cur->next;
 		}
 
 		cur->next = malloc(sizeof(tMessage));
+
+		if(cur->next == NULL) {
+			printf("malloc error in stream\n");
+			pthread_exit(NULL);
+		}
+
 		cur->next->prev = cur;
 		cur = cur->next;
-
-		cur->data = malloc(len);
-		memcpy(cur->data, message, len);
-		cur->size = len;
-		cur->writer = pthread_self();
-		cur->next = NULL;
 	}
+
+	cur->data = malloc(len);
+
+	if(cur->data == NULL) {
+		printf("malloc error in stream\n");
+		pthread_exit(NULL);
+	}
+
+	memcpy(cur->data, message, len);
+	cur->size = len;
+	cur->writer = pthread_self();
+	cur->next = NULL;
 
 	pthread_mutex_unlock(stream->mut);
 	pthread_cond_signal(stream->cond);
 }
 
-int stream_length(tStream* stream) {
-	if(stream->data != NULL) {
-		return stream->data->size;
-	} else {
-		return 0;
-	}
-}
-
-int stream_rcv(tStream* stream, int length, char* dest) {
+char* stream_rcv(tStream* stream, int* length) {
 	pthread_mutex_lock(stream->mut);
 
 	if(stream->data == NULL)
@@ -69,60 +102,44 @@ int stream_rcv(tStream* stream, int length, char* dest) {
 			cur = cur->next;
 		} else {
 			pthread_cond_wait(stream->cond, stream->mut);
+			cur = stream->data;
+				// If the stream has been read since we got
+				// in here, this could be problematic
 		}
 	}
 
-	if(length == 0) {
-		length = cur->size;
-		memcpy(dest, cur->data, cur->size);
+	(*length) = cur->size;
+	char* message = malloc(cur->size);
 
-		if(cur->next)
-			cur->next->prev = cur->prev;
-
-		if(cur->prev)
-			cur->prev->next = cur->next;
-
-		if(cur == stream->data)
-			stream->data = cur->next;
-
-		free(cur->data);
-		free(cur);
-	} else {
-		memcpy(dest, cur->data, length);
-
-		if(length != cur->size) {
-			cur->size -= length;
-
-			char* message = malloc(cur->size);
-			memcpy(message, cur->data + length, cur->size);
-
-			free(cur->data);
-			cur->data = message;
-		} else {
-			if(cur->next)
-				cur->next->prev = cur->prev;
-
-			if(cur->prev)
-				cur->prev->next = cur->next;
-
-			if(cur == stream->data)
-				stream->data = cur->next;
-
-			free(cur->data);
-			free(cur);
-		}
+	if(message == NULL) {
+		printf("malloc error in stream\n");
+		pthread_exit(NULL);
 	}
+
+	memcpy(message, cur->data, cur->size);
+
+	if(cur->next)
+		cur->next->prev = cur->prev;
+
+	if(cur->prev)
+		cur->prev->next = cur->next;
+
+	if(cur == stream->data)
+		stream->data = cur->next;
+
+	free(cur->data);
+	free(cur);
 
 	pthread_mutex_unlock(stream->mut);
-	return length;
+	return message;
 }
 
-int stream_rcv_nblock(tStream* stream, int length, char* dest) {
+char* stream_rcv_nblock(tStream* stream, int* length) {
 	pthread_mutex_lock(stream->mut);
 
 	if(stream->data == NULL) {
 		pthread_mutex_unlock(stream->mut);
-		return 0;
+		return NULL;
 	}
 
 	tMessage* cur = stream->data;
@@ -131,70 +148,32 @@ int stream_rcv_nblock(tStream* stream, int length, char* dest) {
 			cur = cur->next;
 		} else {
 			pthread_mutex_unlock(stream->mut);
-			return 0;
+			return NULL;
 		}
 	}
 
-	if(length == 0) {
-		length = cur->size;
-		memcpy(dest, cur->data, cur->size);
+	(*length) = cur->size;
+	char* message = malloc(cur->size);
 
-		if(cur->next)
-			cur->next->prev = cur->prev;
-
-		if(cur->prev)
-			cur->prev->next = cur->next;
-
-		if(cur == stream->data)
-			stream->data = cur->next;
-
-		free(cur->data);
-		free(cur);
-	} else {
-		memcpy(dest, cur->data, length);
-
-		if(length != cur->size) {
-			cur->size -= length;
-
-			char* message = malloc(cur->size);
-			memcpy(message, cur->data + length, cur->size);
-
-			free(cur->data);
-			cur->data = message;
-		} else {
-			if(cur->next)
-				cur->next->prev = cur->prev;
-
-			if(cur->prev)
-				cur->prev->next = cur->next;
-
-			if(stream->data == cur)
-				stream->data = cur->next;
-
-			free(cur->data);
-			free(cur);
-		}
+	if(message == NULL) {
+		printf("malloc error in stream\n");
+		pthread_exit(NULL);
 	}
 
+	memcpy(message, cur->data, cur->size);
+
+	if(cur->next)
+		cur->next->prev = cur->prev;
+
+	if(cur->prev)
+		cur->prev->next = cur->next;
+
+	if(cur == stream->data)
+		stream->data = cur->next;
+
+	free(cur->data);
+	free(cur);
+
 	pthread_mutex_unlock(stream->mut);
-	return length;
-}
-
-void stream_wait(tStream* stream) {
-	uint8_t d = 0;
-
-	while(d == 0) {
-		pthread_mutex_lock(stream->mut);
-		if(stream->data == NULL) d = 1;
-		pthread_mutex_unlock(stream->mut);
-	}
-}
-
-int stream_wait_full(tStream* stream) {
-	pthread_mutex_lock(stream->mut);
-	if(stream->data == NULL)
-		pthread_cond_wait(stream->cond, stream->mut);
-	pthread_mutex_unlock(stream->mut);
-
-	return stream->data->size;
+	return message;
 }

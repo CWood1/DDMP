@@ -14,18 +14,26 @@
 #include <errno.h>
 
 void* pcmain(void* s) {
-	tStream* cmdStream = (tStream*) s;
+	int len;
+	char running = 1;
 
-	tStream** pTxStream = malloc(stream_wait_full(cmdStream));
-		// First piece of data to come down is a pointer to the stream
-		// from tx
-	stream_rcv(cmdStream, 0, (char*)pTxStream);
+	tStream* cmdStream = (tStream*) s;
+	tStream** pTxStream = (tStream**)(stream_rcv(cmdStream, &len));
+
+	if(len != sizeof(tStream*)) {
+		printf("Error receiving TX/PC stream\n");
+		pthread_exit(NULL);
+	}
 
 	tStream* txStream = *pTxStream;
 	free(pTxStream);
 
-	tStream** pRxStream = malloc(stream_wait_full(cmdStream));
-	stream_rcv(cmdStream, 0, (char*)pRxStream);
+	tStream** pRxStream = (tStream**)(stream_rcv(cmdStream, &len));
+
+	if(len != sizeof(tStream*)) {
+		printf("Error receiving RX/PC stream\n");
+		pthread_exit(NULL);
+	}
 
 	tStream* rxStream = *pRxStream;
 	free(pRxStream);
@@ -42,56 +50,61 @@ void* pcmain(void* s) {
 	replyaddr.sin_family = AF_INET;
 	replyaddr.sin_port = htons(PORT);
 
-	while(1) {
-		lHeartbeat* sent = malloc(sizeof(lHeartbeat));
-		sent->next = NULL;
-		sent->prev = NULL;
-		sent->h = NULL;
+	lHeartbeat* sent = NULL;
+	lHeartbeat* received = NULL;
 
-		lHeartbeat* received = malloc(sizeof(lHeartbeat));
-		sent->next = NULL;
-		sent->prev = NULL;
-		sent->h = NULL;
+	while(running) {
+		char* cmd = stream_rcv_nblock(cmdStream, &len);
 
-		int size = stream_length(cmdStream);
-		if(size != 0) {
-			char* cmd = malloc(stream_wait_full(cmdStream));
-			stream_rcv(cmdStream, 0, cmd);
-
+		if(cmd != NULL) {
 			char* t = strtok(cmd, " ");
 
 			if(strcmp(t, "shutdown") == 0) {
-				printf("pc shutting down.\n");
-				close(sd);
-				pthread_exit(NULL);
+				running = 0;
 			}
+
+			free(cmd);
 		}
 
-		size = stream_length(txStream);
-		if(size != 0) {
-			lHeartbeat** next = malloc(stream_wait_full(txStream));
-			stream_rcv(txStream, 0, (char*) next);
+		lHeartbeat* next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 
-			sent->next = *next;
-			sent->next->prev = sent;
-			sent = sent->next;
+		while(next != NULL) {
+			lHeartbeat* cur;
 
-			free(next);
+			if(sent == NULL) {
+				sent = next;
 
-			replyaddr.sin_addr.s_addr = sent->addrv4;
+				sent->prev = NULL;
+				sent->next = NULL;
+
+				cur = sent;
+			} else {
+				lHeartbeat* cur = sent;
+
+				while(cur->next != NULL) {
+					cur = cur->next;
+				}
+
+				cur->next = next;
+				next->prev = cur;
+				next->next = NULL;
+
+				cur = cur->next;
+			}
+
+			replyaddr.sin_addr.s_addr = cur->addrv4;
 				// A kludge, but we need to display this
 
 			printf("Heartbeat sent (%s):\n",
 				inet_ntoa(replyaddr.sin_addr));
-			printHeartbeat(sent->h);
+			printHeartbeat(cur->h);
+
+			next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 		}
 
-		size = stream_length(rxStream);
-		if(size != 0) {
-			char* in = malloc(stream_wait_full(rxStream));
-			stream_rcv(rxStream, 0, in);
+		message* m = (message*)(stream_rcv_nblock(rxStream, &len));
 
-			message* m = (message*)in;
+		while(m != NULL) {
 			replyaddr.sin_addr.s_addr = m->addrv4;
 				// Needed to display IP addresses properly
 
@@ -110,6 +123,7 @@ void* pcmain(void* s) {
 				int rc = sendto(sd, b, size, 0,
 					(struct sockaddr*)&replyaddr, sizeof(replyaddr));
 
+				free(h);
 				free(r);
 				free(b);
 
@@ -126,6 +140,36 @@ void* pcmain(void* s) {
 				printResponse(r);
 				free(r);
 	 		}
+
+			free(m->buffer);
+			free(m);
+			m = (message*)(stream_rcv_nblock(rxStream, &len));
+		}
+
+		if(running == 0) {
+			lHeartbeat* cur = sent;
+			while(cur->next != NULL) {
+				free(cur->h);
+				cur = cur->next;
+				free(cur->prev);
+			}
+
+			free(cur->h);
+			free(cur);
+
+			/**
+			cur = received;
+			while(cur->prev != NULL) {
+				free(cur->h);
+				cur = cur->prev;
+				free(cur->next);
+			}
+
+			free(receivedHead);*/
 		}
 	}
+
+	printf("pc shutting down.\n");
+	close(sd);
+	pthread_exit(NULL);
 }

@@ -10,6 +10,11 @@
 heartbeat* craftHeartbeat(int active) {
 	heartbeat* h = malloc(sizeof(heartbeat));
 
+	if(h == NULL) {
+		printf("malloc error in proto\n");
+		pthread_exit(NULL);
+	}
+
 	h->ident = 0;
 	h->flags = 0;
 
@@ -30,15 +35,21 @@ heartbeat* craftHeartbeat(int active) {
 }
 
 char* serializeHeartbeat(heartbeat* h, int* length) {
-	char* heartbeat = malloc(9);
-	memset(heartbeat, 0, 9);
+	char* s = malloc(9);
 
-	heartbeat[0] = h->ident;
-	memcpy(heartbeat + 1, &(h->flags), sizeof(h->flags));
-	memcpy(heartbeat + 5, &(h->magic), sizeof(h->magic));
+	if(s == NULL) {
+		printf("malloc error in proto\n");
+		pthread_exit(NULL);
+	}
+
+	memset(s, 0, 9);
+
+	s[0] = h->ident;
+	memcpy(s + 1, &(h->flags), sizeof(h->flags));
+	memcpy(s + 5, &(h->magic), sizeof(h->magic));
 
 	*length = 9;
-	return heartbeat;
+	return s;
 }
 
 heartbeat* deserializeHeartbeat(char* s, int length) {
@@ -47,6 +58,11 @@ heartbeat* deserializeHeartbeat(char* s, int length) {
 	}
 
 	heartbeat* h = malloc(sizeof(heartbeat));
+
+	if(h == NULL) {
+		printf("malloc error in proto\n");
+		pthread_exit(NULL);
+	}
 
 	h->ident = s[0];
 	memcpy(&(h->flags), s + 1, sizeof(h->flags));
@@ -74,6 +90,11 @@ int isHeartbeat(char* c, int length) {
 response* craftResponse(heartbeat* h) {
 	response* r = malloc(sizeof(response));
 
+	if(r == NULL) {
+		printf("malloc error in proto\n");
+		pthread_exit(NULL);
+	}
+
 	r->ident = 1;
 	r->flags = 0;
 	r->magic = h->magic;
@@ -82,15 +103,21 @@ response* craftResponse(heartbeat* h) {
 }
 
 char* serializeResponse(response* r, int* length) {
-	char* response = malloc(9);
-	memset(response, 0, 9);
+	char* s = malloc(9);
 
-	response[0] = r->ident;
-	memcpy(response + 1, &(r->flags), sizeof(r->flags));
-	memcpy(response + 5, &(r->magic), sizeof(r->magic));
+	if(s == NULL) {
+		printf("malloc error in proto\n");
+		pthread_exit(NULL);
+	}
+
+	memset(s, 0, 9);
+
+	s[0] = r->ident;
+	memcpy(s + 1, &(r->flags), sizeof(r->flags));
+	memcpy(s + 5, &(r->magic), sizeof(r->magic));
 
 	*length = 9;
-	return response;
+	return s;
 }
 
 response* deserializeResponse(char* s, int length) {
@@ -99,6 +126,11 @@ response* deserializeResponse(char* s, int length) {
 	}
 
 	response* r = malloc(sizeof(response));
+
+	if(r == NULL) {
+		printf("malloc error in proto\n");
+		pthread_exit(NULL);
+	}
 
 	r->ident = s[0];
 	memcpy(&(r->flags), s + 1, sizeof(r->flags));

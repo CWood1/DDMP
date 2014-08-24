@@ -16,17 +16,18 @@
 #include <errno.h>
 
 void* rxmain(void* stream) {
-	int sd, rc;
+	int sd, rc, len;
 	struct sockaddr_in selfaddr, senderaddr, replyaddr;
-		// Structs for the sender of the heartbeat, and receiver of the heartbeat
-
 	char buffer[100];
-		// TODO: Clean up size here, to maximum needed size
 
 	tStream* cmdStream = (tStream*)stream;
 
-	tStream** pPcStream = malloc(stream_wait_full(cmdStream));
-	stream_rcv(cmdStream, 0, (char*)pPcStream);
+	tStream** pPcStream = (tStream**)(stream_rcv(cmdStream, &len));
+
+	if(len != sizeof(tStream*)) {
+		printf("Error receiving RX/PC stream\n");
+		pthread_exit(NULL);
+	}
 
 	tStream* pcStream = *pPcStream;
 	free(pPcStream);
@@ -62,62 +63,40 @@ void* rxmain(void* stream) {
 			pthread_exit(NULL);
 		} else if(rc >= 0) {
 			message* m = malloc(sizeof(message));
+
+			if(m == NULL) {
+				printf("malloc error in rc\n");
+				pthread_exit(NULL);
+			}
+
 			m->buffer = malloc(rc);
+
+			if(m->buffer == NULL) {
+				printf("malloc error in rc\n");
+				pthread_exit(NULL);
+			}
+
 			memcpy(m->buffer, (void*)buffer, rc);
 			m->addrv4 = senderaddr.sin_addr.s_addr;
 			m->bufferSize = rc;
 			
 			stream_send(pcStream, (char*)m, sizeof(message));
-
-/*			if(isHeartbeat((char*)buffer, rc)) {
-				printf("Heartbeat received (%s):\n",
-					inet_ntoa(senderaddr.sin_addr));
-
-				replyaddr.sin_addr.s_addr = senderaddr.sin_addr.s_addr;
-
-				heartbeat* h = deserializeHeartbeat((char*)buffer, rc);
-				printHeartbeat(h);
-
-				stream_send(pcStream, h, sizeof(heartbeat*));
-
-				int size;
-
-				response* r = craftResponse(h);
-				char* b = serializeResponse(r, &size);
-
-				rc = sendto(sd, b, size, 0,
-					(struct sockaddr*)&replyaddr, sizeof(replyaddr));
-
-				free(r);
-				free(b);
-
-				if(rc < 0) {
-					perror("sendto error");
-					close(sd);
-					pthread_exit(NULL);
-				}
-			} else {
-				printf("Response received (%s):\n",
-					inet_ntoa(senderaddr.sin_addr));
-
-				response* r = deserializeResponse((char*)buffer, rc);
-				printResponse(r);
-				free(r);
-			}*/
+			free(m);
 		}
 
-		int size = stream_length(cmdStream);
-		if(size != 0) {
-			char* cmd = malloc(stream_wait_full(cmdStream));
-			stream_rcv(cmdStream, 0, cmd);
+		char* cmd = stream_rcv_nblock(cmdStream, &len);
 
+		if(cmd != NULL) {
 			char* t = strtok(cmd, " ");
 
 			if(strcmp(t, "shutdown") == 0) {
+				free(cmd);
 				printf("rx shutting down.\n");
 				close(sd);
 				pthread_exit(NULL);
 			}
+
+			free(cmd);
 		}
 	}
 }

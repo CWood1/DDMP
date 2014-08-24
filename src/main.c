@@ -5,6 +5,8 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include <mcheck.h>
+
 #include "rx.h"
 #include "tx.h"
 #include "pc.h"
@@ -17,16 +19,34 @@ void sigintHandler(int signo) {
 	if(signo == SIGINT) {
 		stream_send(s_tx, "shutdown", strlen("shutdown") + 1);
 		stream_send(s_rx, "shutdown", strlen("shutdown") + 1);
-		stream_send(s_pc, "shutdown", strlen("shutdown") + 1);
 	}
 }
 
 int main(int argc, char** argv) {
+	mtrace();
+
 	pthread_t tx, rx, pc;
 
 	s_tx = malloc(sizeof(tStream));
+
+	if(s_tx == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
+
 	s_rx = malloc(sizeof(tStream));
+
+	if(s_rx == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
+
 	s_pc = malloc(sizeof(tStream));
+
+	if(s_pc == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
 
 	stream_init(s_tx);
 	stream_init(s_rx);
@@ -53,13 +73,22 @@ int main(int argc, char** argv) {
 	}
 
 	stream_send(s_tx, argv[1], strlen(argv[1]) + 1);
-	stream_wait(s_tx);
 	stream_send(s_tx, argv[2], strlen(argv[2]) + 1);
-	stream_wait(s_tx);
 	stream_send(s_tx, argv[3], strlen(argv[3]) + 1);
 
 	tStream* s_tx_pc = malloc(sizeof(tStream));
+
+	if(s_tx_pc == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
+
 	tStream* s_rx_pc = malloc(sizeof(tStream));
+
+	if(s_rx_pc == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
 
 	stream_init(s_tx_pc);
 	stream_init(s_rx_pc);
@@ -70,12 +99,31 @@ int main(int argc, char** argv) {
 	stream_send(s_rx, (char*)(&s_rx_pc), sizeof(tStream*));
 	stream_send(s_pc, (char*)(&s_rx_pc), sizeof(tStream*));
 
-	printf("Hi\n");
-
 	pthread_join(tx, NULL);
 	pthread_join(rx, NULL);
-	pthread_join(pc, NULL);
 		// Wait for the threads to finish before we exit
+
+	stream_send(s_pc, "shutdown", strlen("shutdown") + 1);
+		// Wait for the other threads to end, before we close down
+		// PC, due to the potential for data to be lost in a stream
+		// without being properly free'd
+
+	pthread_join(pc, NULL);
+		// Wait for PC to finish as well
+
+	stream_free(s_tx);
+	stream_free(s_rx);
+	stream_free(s_pc);
+
+	stream_free(s_tx_pc);
+	stream_free(s_rx_pc);
+
+	free(s_tx);
+	free(s_rx);
+	free(s_pc);
+
+	free(s_tx_pc);
+	free(s_rx_pc);
 
 	return 0;
 }
