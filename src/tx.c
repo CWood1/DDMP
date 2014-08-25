@@ -76,17 +76,57 @@ void* txmain(void* stream) {
 
 	free(str_directaddr);
 
-	while(1) {
-		heartbeat* h;
-		char* buffer;
-		int length;
+	struct timeval last;
+	last.tv_sec = 0;
 
-		if(bcastFlag == 1) {
-			h = craftHeartbeat(1);
+	while(1) {
+		struct timeval now;
+		gettimeofday(&now, NULL);
+
+		if(last.tv_sec == 0 ||
+			last.tv_sec < now.tv_sec || (now.tv_usec - last.tv_usec) >= 100000) { 
+			heartbeat* h;
+			char* buffer;
+			int length;
+
+			if(bcastFlag == 1) {
+				h = craftHeartbeat(1);
+				buffer = serializeHeartbeat(h, &length);
+
+				rc = sendto(sd, buffer, length, 0,
+					(struct sockaddr*)&bcastaddr, sizeof(bcastaddr));
+				free(buffer);
+
+				lHeartbeat* s = malloc(sizeof(lHeartbeat));
+
+				if(s == NULL) {
+					printf("malloc error in tx\n");
+					close(sd);
+					pthread_exit(NULL);
+				}
+
+				s->next = NULL;
+				s->prev = NULL;
+				s->h = h;
+				s->addrv4 = bcastaddr.sin_addr.s_addr;
+				gettimeofday(&(s->timeSent), NULL);
+
+				stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
+				free(s);
+
+				if(rc < 0) {
+					// At some point, inform CT about this
+					perror("Unable to send broadcast heartbeat");
+					close(sd);
+					pthread_exit(NULL);
+				}
+			}
+
+			h = craftHeartbeat(0);
 			buffer = serializeHeartbeat(h, &length);
 
-			rc = sendto(sd, buffer, length, 0,
-				(struct sockaddr*)&bcastaddr, sizeof(bcastaddr));
+			rc = sendto(sd, buffer, length, 0, (struct sockaddr*)&directaddr,
+				sizeof(directaddr));
 			free(buffer);
 
 			lHeartbeat* s = malloc(sizeof(lHeartbeat));
@@ -100,48 +140,19 @@ void* txmain(void* stream) {
 			s->next = NULL;
 			s->prev = NULL;
 			s->h = h;
-			s->addrv4 = bcastaddr.sin_addr.s_addr;
+			s->addrv4 = directaddr.sin_addr.s_addr;
 			gettimeofday(&(s->timeSent), NULL);
+
+			last = s->timeSent;
 
 			stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
 			free(s);
 
 			if(rc < 0) {
-				// At some point, inform CT about this
-				perror("Unable to send broadcast heartbeat");
+				perror("Unable to send direct heartbeat");
 				close(sd);
 				pthread_exit(NULL);
 			}
-		}
-
-		h = craftHeartbeat(0);
-		buffer = serializeHeartbeat(h, &length);
-
-		rc = sendto(sd, buffer, length, 0, (struct sockaddr*)&directaddr,
-			sizeof(directaddr));
-		free(buffer);
-
-		lHeartbeat* s = malloc(sizeof(lHeartbeat));
-
-		if(s == NULL) {
-			printf("malloc error in tx\n");
-			close(sd);
-			pthread_exit(NULL);
-		}
-
-		s->next = NULL;
-		s->prev = NULL;
-		s->h = h;
-		s->addrv4 = directaddr.sin_addr.s_addr;
-		gettimeofday(&(s->timeSent), NULL);
-
-		stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
-		free(s);
-
-		if(rc < 0) {
-			perror("Unable to send direct heartbeat");
-			close(sd);
-			pthread_exit(NULL);
 		}
 
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
@@ -166,8 +177,5 @@ void* txmain(void* stream) {
 
 			free(cmd);
 		}
-
-		usleep(100000);
-			// 100 milliseconds, or should be :)
 	}
 }
