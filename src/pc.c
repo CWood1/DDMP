@@ -147,6 +147,9 @@ void* pcmain(void* s) {
 				}
 
 				if(cur->h->magic == r->magic) {
+					printf("Response matches:\n");
+					printHeartbeat(cur->h);
+
 					if(cur->next != NULL) {
 						cur->next->prev = cur->prev;
 					}
