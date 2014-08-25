@@ -143,6 +143,8 @@ void* pcmain(void* s) {
 				while(cur->h->magic != r->magic) {
 					if(cur->next != NULL) {
 						cur = cur->next;
+					} else {
+						break;
 					}
 				}
 
@@ -164,7 +166,12 @@ void* pcmain(void* s) {
 
 					free(cur->h);
 					free(cur);
+				} else {
+					printf("Response does not match.\n");
 				}
+					// TODO: Add support for broadcast heartbeats
+					// here, and properly deal with unmatched
+					// responses (both require UCI)
 
 				free(r);
 	 		}
