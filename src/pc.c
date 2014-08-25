@@ -91,12 +91,12 @@ void* pcmain(void* s) {
 				cur = cur->next;
 			}
 
-			replyaddr.sin_addr.s_addr = cur->addrv4;
+			replyaddr.sin_addr.s_addr = next->addrv4;
 				// A kludge, but we need to display this
 
 			printf("Heartbeat sent (%s):\n",
 				inet_ntoa(replyaddr.sin_addr));
-			printHeartbeat(cur->h);
+			printHeartbeat(next->h);
 
 			next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 		}
