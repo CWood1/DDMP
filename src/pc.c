@@ -138,40 +138,44 @@ void* pcmain(void* s) {
 				response* r = deserializeResponse(m->buffer, m->bufferSize);
 				printResponse(r);
 
-				lHeartbeat* cur = sent;
+				if(cur != NULL) {
+					lHeartbeat* cur = sent;
 
-				while(cur->h->magic != r->magic) {
-					if(cur->next != NULL) {
-						cur = cur->next;
+					while(cur->h->magic != r->magic) {
+						if(cur->next != NULL) {
+							cur = cur->next;
+						} else {
+							break;
+						}
+					}
+
+					if(cur->h->magic == r->magic) {
+						printf("Response matches:\n");
+						printHeartbeat(cur->h);
+
+						if(cur->next != NULL) {
+							cur->next->prev = cur->prev;
+						}
+
+						if(cur->prev != NULL) {
+							cur->prev->next = cur->next;
+						}
+
+						if(cur == sent) {
+							sent = cur->next;
+						}
+
+						free(cur->h);
+						free(cur);
 					} else {
-						break;
+						printf("Response does not match.\n");
 					}
-				}
-
-				if(cur->h->magic == r->magic) {
-					printf("Response matches:\n");
-					printHeartbeat(cur->h);
-
-					if(cur->next != NULL) {
-						cur->next->prev = cur->prev;
-					}
-
-					if(cur->prev != NULL) {
-						cur->prev->next = cur->next;
-					}
-
-					if(cur == sent) {
-						sent = cur->next;
-					}
-
-					free(cur->h);
-					free(cur);
+						// TODO: Add support for broadcast heartbeats
+						// here, and properly deal with unmatched
+						// responses (both require UCI)
 				} else {
 					printf("Response does not match.\n");
 				}
-					// TODO: Add support for broadcast heartbeats
-					// here, and properly deal with unmatched
-					// responses (both require UCI)
 
 				free(r);
 	 		}
