@@ -5,8 +5,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include <mcheck.h>
-
 #include "rx.h"
 #include "tx.h"
 #include "pc.h"
@@ -23,8 +21,6 @@ void sigintHandler(int signo) {
 }
 
 int main(int argc, char** argv) {
-	mtrace();
-
 	pthread_t tx, rx, pc;
 
 	s_tx = malloc(sizeof(tStream));
