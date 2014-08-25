@@ -51,7 +51,6 @@ void* pcmain(void* s) {
 	replyaddr.sin_port = htons(PORT);
 
 	lHeartbeat* sent = NULL;
-	lHeartbeat* received = NULL;
 
 	while(running) {
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
@@ -145,29 +144,17 @@ void* pcmain(void* s) {
 			free(m);
 			m = (message*)(stream_rcv_nblock(rxStream, &len));
 		}
-
-		if(running == 0) {
-			lHeartbeat* cur = sent;
-			while(cur->next != NULL) {
-				free(cur->h);
-				cur = cur->next;
-				free(cur->prev);
-			}
-
-			free(cur->h);
-			free(cur);
-
-			/**
-			cur = received;
-			while(cur->prev != NULL) {
-				free(cur->h);
-				cur = cur->prev;
-				free(cur->next);
-			}
-
-			free(receivedHead);*/
-		}
 	}
+
+	lHeartbeat* cur = sent;
+	while(cur->next != NULL) {
+		free(cur->h);
+		cur = cur->next;
+		free(cur->prev);
+	}
+
+	free(cur->h);
+	free(cur);
 
 	printf("pc shutting down.\n");
 	close(sd);
