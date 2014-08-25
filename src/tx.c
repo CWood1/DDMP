@@ -101,6 +101,7 @@ void* txmain(void* stream) {
 			s->prev = NULL;
 			s->h = h;
 			s->addrv4 = bcastaddr.sin_addr.s_addr;
+			gettimeofday(&(s->timeSent), NULL);
 
 			stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
 			free(s);
@@ -132,6 +133,7 @@ void* txmain(void* stream) {
 		s->prev = NULL;
 		s->h = h;
 		s->addrv4 = directaddr.sin_addr.s_addr;
+		gettimeofday(&(s->timeSent), NULL);
 
 		stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
 		free(s);

@@ -173,6 +173,64 @@ void* pcmain(void* s) {
 			free(m);
 			m = (message*)(stream_rcv_nblock(rxStream, &len));
 		}
+
+		if(sent != NULL) {
+			lHeartbeat* cur = sent;
+
+			struct timeval now;
+			gettimeofday(&now, NULL);
+
+			while(cur->next != NULL) {
+				if(cur->timeSent.tv_sec > now.tv_sec || 
+						now.tv_usec - cur->timeSent.tv_usec > 400000) {
+						// If more than 400ms has passed, remove the
+						// heartbeat from the list
+					printf("Timedout heartbeat:\n");
+					printHeartbeat(cur->h);
+
+					if(cur->next != NULL) {
+						cur->next->prev = cur->prev;
+					}
+
+					if(cur->prev != NULL) {
+						cur->prev->next = cur->next;
+					}
+
+					if(cur == sent) {
+						sent = cur->next;
+					}
+
+					free(cur->h);
+
+					lHeartbeat* x = cur->next;
+					free(cur);
+					cur = x;
+				} else {
+					cur = cur->next;
+				}
+			}
+
+			if(cur->timeSent.tv_sec > now.tv_sec ||
+					now.tv_usec - cur->timeSent.tv_usec > 400000) {
+				printf("Timedout heartbeat:\n");
+				printHeartbeat(cur->h);
+
+				if(cur->next != NULL) {
+					cur->next->prev = cur->prev;
+				}
+
+				if(cur->prev != NULL) {
+					cur->prev->next = cur->next;
+				}
+
+				if(cur == sent) {
+					sent = cur->next;
+				}
+
+				free(cur->h);
+				free(cur);
+			}
+		}
 	}
 
 	lHeartbeat* cur = sent;

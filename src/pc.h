@@ -3,6 +3,7 @@
 
 #include "proto.h"
 #include <stdint.h>
+#include <sys/time.h>
 
 typedef struct lHeartbeat {
 	struct lHeartbeat* next;
@@ -10,6 +11,7 @@ typedef struct lHeartbeat {
 
 	heartbeat* h;
 	uint32_t addrv4;
+	struct timeval timeSent;
 } lHeartbeat;
 
 typedef struct message {
