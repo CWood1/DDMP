@@ -138,7 +138,7 @@ void* pcmain(void* s) {
 				response* r = deserializeResponse(m->buffer, m->bufferSize);
 				printResponse(r);
 
-				if(cur != NULL) {
+				if(sent != NULL) {
 					lHeartbeat* cur = sent;
 
 					while(cur->h->magic != r->magic) {
