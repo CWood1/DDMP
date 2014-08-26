@@ -48,12 +48,6 @@ void* pcmain(void* s) {
 	tStream* rpStream = *pRpStream;
 	free(pRpStream);
 
-	struct sockaddr_in replyaddr;
-
-	memset(&replyaddr, 0, sizeof(replyaddr));
-	replyaddr.sin_family = AF_INET;
-	replyaddr.sin_port = htons(PORT);
-
 	lHeartbeat* sent = NULL;
 	lResponse* unmatched = NULL;
 
@@ -96,11 +90,11 @@ void* pcmain(void* s) {
 				cur = cur->next;
 			}
 
-			replyaddr.sin_addr.s_addr = next->addrv4;
-				// A kludge, but we need to display this
+			struct in_addr addrv4;
+			addrv4.s_addr = next->addrv4;
 
 			printf("Heartbeat sent (%s):\n",
-				inet_ntoa(replyaddr.sin_addr));
+				inet_ntoa(addrv4));
 			printHeartbeat(next->h);
 
 			next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
@@ -109,12 +103,12 @@ void* pcmain(void* s) {
 		message* m = (message*)(stream_rcv_nblock(rxStream, &len));
 
 		while(m != NULL) {
-			replyaddr.sin_addr.s_addr = m->addrv4;
-				// Needed to display IP addresses properly
+			struct in_addr addrv4;
+			addrv4.s_addr = m->addrv4;
 
 			if(isHeartbeat(m->buffer, m->bufferSize)) {
 				printf("Heartbeat received (%s):\n",
-					inet_ntoa(replyaddr.sin_addr));
+					inet_ntoa(addrv4));
 
 				heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
 				printHeartbeat(h);
@@ -123,7 +117,7 @@ void* pcmain(void* s) {
 				free(h);
 			} else {
 				printf("Response received (%s):\n",
-					inet_ntoa(replyaddr.sin_addr));
+					inet_ntoa(addrv4));
 
 				response* r = deserializeResponse(m->buffer, m->bufferSize);
 				printResponse(r);
