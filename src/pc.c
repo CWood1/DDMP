@@ -38,13 +38,17 @@ void* pcmain(void* s) {
 	tStream* rxStream = *pRxStream;
 	free(pRxStream);
 
-	int sd;
-	struct sockaddr_in replyaddr;
+	tStream** pRpStream = (tStream**)(stream_rcv(cmdStream, &len));
 
-	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("Processing - socket error.");
+	if(len != sizeof(tStream*)) {
+		printf("Error receiving RP/PC stream\n");
 		pthread_exit(NULL);
 	}
+
+	tStream* rpStream = *pRpStream;
+	free(pRpStream);
+
+	struct sockaddr_in replyaddr;
 
 	memset(&replyaddr, 0, sizeof(replyaddr));
 	replyaddr.sin_family = AF_INET;
@@ -115,23 +119,8 @@ void* pcmain(void* s) {
 				heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
 				printHeartbeat(h);
 
-				int size;
-
-				response* r = craftResponse(h);
-				char* b = serializeResponse(r, &size);
-
-				int rc = sendto(sd, b, size, 0,
-					(struct sockaddr*)&replyaddr, sizeof(replyaddr));
-
+				stream_send(rpStream, (char*)h, sizeof(heartbeat));
 				free(h);
-				free(r);
-				free(b);
-
-				if(rc < 0) {
-					perror("sendto error");
-					close(sd);
-					pthread_exit(NULL);
-				}
 			} else {
 				printf("Response received (%s):\n",
 					inet_ntoa(replyaddr.sin_addr));
@@ -375,6 +364,5 @@ void* pcmain(void* s) {
 	free(cur);
 
 	printf("pc shutting down.\n");
-	close(sd);
 	pthread_exit(NULL);
 }

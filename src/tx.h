@@ -1,5 +1,5 @@
-#ifndef __SEND_H__
-#define __SEND_H__
+#ifndef __TX_H__
+#define __TX_H__
 
 void* txmain(void*);
 

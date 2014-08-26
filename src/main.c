@@ -8,20 +8,22 @@
 #include "rx.h"
 #include "tx.h"
 #include "pc.h"
+#include "rp.h"
 #include "stream.h"
 #include "dhcplease.h"
 
-tStream *s_tx, *s_rx, *s_pc;
+tStream *s_tx, *s_rx, *s_pc, *s_rp;
 
 void sigintHandler(int signo) {
 	if(signo == SIGINT) {
 		stream_send(s_tx, "shutdown", strlen("shutdown") + 1);
 		stream_send(s_rx, "shutdown", strlen("shutdown") + 1);
+		stream_send(s_rp, "shutdown", strlen("shutdown") + 1);
 	}
 }
 
 int main(int argc, char** argv) {
-	pthread_t tx, rx, pc;
+	pthread_t tx, rx, pc, rp;
 
 	s_tx = malloc(sizeof(tStream));
 
@@ -44,9 +46,17 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	s_rp = malloc(sizeof(tStream));
+
+	if(s_rp == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
+
 	stream_init(s_tx);
 	stream_init(s_rx);
 	stream_init(s_pc);
+	stream_init(s_rp);
 
 	if(signal(SIGINT, sigintHandler) == SIG_ERR) {
 		fprintf(stderr, "Unable to catch SIGINT.\n");
@@ -68,6 +78,11 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	if(pthread_create(&rp, NULL, rpmain, s_rp) != 0) {
+		fprintf(stderr, "Error: failed to start rp thread\n");
+		exit(EXIT_FAILURE);
+	}
+
 	stream_send(s_tx, argv[1], strlen(argv[1]) + 1);
 	stream_send(s_tx, argv[2], strlen(argv[2]) + 1);
 	stream_send(s_tx, argv[3], strlen(argv[3]) + 1);
@@ -86,8 +101,16 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	tStream* s_rp_pc = malloc(sizeof(tStream));
+
+	if(s_rp_pc == NULL) {
+		printf("malloc error in ct\n");
+		exit(EXIT_FAILURE);
+	}
+
 	stream_init(s_tx_pc);
 	stream_init(s_rx_pc);
+	stream_init(s_rp_pc);
 
 	stream_send(s_tx, (char*)(&s_tx_pc), sizeof(tStream*));
 	stream_send(s_pc, (char*)(&s_tx_pc), sizeof(tStream*));
@@ -95,8 +118,12 @@ int main(int argc, char** argv) {
 	stream_send(s_rx, (char*)(&s_rx_pc), sizeof(tStream*));
 	stream_send(s_pc, (char*)(&s_rx_pc), sizeof(tStream*));
 
+	stream_send(s_rp, (char*)(&s_rp_pc), sizeof(tStream*));
+	stream_send(s_pc, (char*)(&s_rp_pc), sizeof(tStream*));
+
 	pthread_join(tx, NULL);
 	pthread_join(rx, NULL);
+	pthread_join(rp, NULL);
 		// Wait for the threads to finish before we exit
 
 	stream_send(s_pc, "shutdown", strlen("shutdown") + 1);
@@ -110,16 +137,20 @@ int main(int argc, char** argv) {
 	stream_free(s_tx);
 	stream_free(s_rx);
 	stream_free(s_pc);
+	stream_free(s_rp);
 
 	stream_free(s_tx_pc);
 	stream_free(s_rx_pc);
+	stream_free(s_rp_pc);
 
 	free(s_tx);
 	free(s_rx);
 	free(s_pc);
+	free(s_rp);
 
 	free(s_tx_pc);
 	free(s_rx_pc);
+	free(s_rp_pc);
 
 	return 0;
 }
