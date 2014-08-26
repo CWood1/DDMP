@@ -14,6 +14,14 @@ typedef struct lHeartbeat {
 	struct timeval timeSent;
 } lHeartbeat;
 
+typedef struct lResponse {
+	struct lResponse* next;
+	struct lResponse* prev;
+
+	response* r;
+	uint8_t counter;
+} lResponse;
+
 typedef struct message {
 	char* buffer;
 	uint32_t bufferSize;

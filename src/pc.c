@@ -51,6 +51,7 @@ void* pcmain(void* s) {
 	replyaddr.sin_port = htons(PORT);
 
 	lHeartbeat* sent = NULL;
+	lResponse* unmatched = NULL;
 
 	while(running) {
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
@@ -167,17 +168,55 @@ void* pcmain(void* s) {
 
 						free(cur->h);
 						free(cur);
+
+						free(r);
 					} else {
-						printf("Response does not match.\n");
+						lResponse* current = unmatched;
+
+						if(current == NULL) {
+							unmatched = malloc(sizeof(lResponse));
+							unmatched->next = NULL;
+							unmatched->prev = NULL;
+
+							current = unmatched;
+						} else {
+							while(current->next != NULL) {
+								current = current->next;
+							}
+
+							current->next = malloc(sizeof(lResponse));
+							current->next->prev = current;
+							current = current->next;
+							current->next = NULL;
+						}
+
+						current->r = r;
 					}
 						// TODO: Add support for broadcast heartbeats
 						// here, and properly deal with unmatched
 						// responses (both require UCI)
 				} else {
-					printf("Response does not match.\n");
-				}
+					lResponse* current = unmatched;
 
-				free(r);
+					if(current == NULL) {
+						unmatched = malloc(sizeof(lResponse));
+						unmatched->next = NULL;
+						unmatched->prev = NULL;
+
+						current = unmatched;
+					} else {
+						while(current->next != NULL) {
+							current = current->next;
+						}
+
+						current->next = malloc(sizeof(lResponse));
+						current->next->prev = current;
+						current = current->next;
+						current->next = NULL;
+					}
+
+					current->r = r;
+				}
 	 		}
 
 			free(m->buffer);
@@ -240,6 +279,87 @@ void* pcmain(void* s) {
 
 				free(cur->h);
 				free(cur);
+			}
+		}
+
+		if(unmatched != NULL) {
+			lResponse* cur = unmatched;
+
+			while(cur != NULL) {
+				if(cur->counter == 0) {
+					cur->counter = 1;
+					cur = cur->next;
+				} else {
+					int removed = 0;
+					lHeartbeat* current = sent;
+
+					while(current != NULL) {
+						if(cur->r->magic == current->h->magic) {
+							printf("Heartbeat:\n");
+							printHeartbeat(current->h);
+							printf("matched with response:\n");
+							printResponse(cur->r);
+
+							if(cur->prev != NULL) {
+								cur->prev->next = cur->next;
+							}
+
+							if(cur->next != NULL) {
+								cur->next->prev = cur->prev;
+							}
+
+							if(cur == unmatched) {
+								unmatched = cur->next;
+							}
+
+							free(cur->r);
+							lResponse* x = cur->next;
+							free(cur);
+							cur = x;
+
+							if(current->prev != NULL) {
+								current->prev->next = current->next;
+							}
+
+							if(current->next != NULL) {
+								current->next->prev = current->prev;
+							}
+
+							if(current == sent) {
+								sent = current->next;
+							}
+
+							free(current->h);
+							free(current);
+
+							removed = 1;
+							break;
+						} else {
+							current = current->next;
+						}
+					}
+
+					if(removed == 0) {
+						printf("Response unmatched:\n");
+						printResponse(cur->r);
+
+						if(cur->next != NULL) {
+							cur->next->prev = cur->prev;
+						}
+
+						if(cur->prev != NULL) {
+							cur->prev->next = cur->next;
+						}
+
+						if(cur == unmatched) {
+							unmatched = cur->next;
+						}
+
+						lResponse* x = cur->next;
+						free(cur->r);
+						free(cur);
+					}
+				}
 			}
 		}
 	}
