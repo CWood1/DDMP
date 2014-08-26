@@ -27,6 +27,38 @@ tStream* getStreamFromStream(tStream* cmdStream) {
 	return s;
 }
 
+void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
+	int len;
+	lHeartbeat* next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
+
+	while(next != NULL) {
+		if(*sent == NULL) {
+			*sent = next;
+
+			next->prev = NULL;
+			next->next = NULL;
+		} else {
+			lHeartbeat* cur = *sent;
+
+			while(cur->next != NULL) {
+				cur = cur->next;
+			}
+
+			cur->next = next;
+			next->prev = cur;
+			next->next = NULL;
+		}
+
+		struct in_addr addrv4;
+		addrv4.s_addr = next->addrv4;
+
+		printf("Heartbeat sent(%s):\n", inet_ntoa(addrv4));
+		printHeartbeat(next->h);
+
+		next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
+	}
+}
+
 void* pcmain(void* s) {
 	int len;
 	char running = 1;
@@ -67,41 +99,7 @@ void* pcmain(void* s) {
 			free(cmd);
 		}
 
-		lHeartbeat* next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
-
-		while(next != NULL) {
-			lHeartbeat* cur;
-
-			if(sent == NULL) {
-				sent = next;
-
-				sent->prev = NULL;
-				sent->next = NULL;
-
-				cur = sent;
-			} else {
-				lHeartbeat* cur = sent;
-
-				while(cur->next != NULL) {
-					cur = cur->next;
-				}
-
-				cur->next = next;
-				next->prev = cur;
-				next->next = NULL;
-
-				cur = cur->next;
-			}
-
-			struct in_addr addrv4;
-			addrv4.s_addr = next->addrv4;
-
-			printf("Heartbeat sent (%s):\n",
-				inet_ntoa(addrv4));
-			printHeartbeat(next->h);
-
-			next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
-		}
+		getSentHeartbeats(&sent, txStream);
 
 		message* m = (message*)(stream_rcv_nblock(rxStream, &len));
 
