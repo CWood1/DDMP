@@ -13,40 +13,43 @@
 #include <pthread.h>
 #include <errno.h>
 
+tStream* getStreamFromStream(tStream* cmdStream) {
+	int len;
+	tStream** new = (tStream**)(stream_rcv(cmdStream, &len));
+
+	if(len != sizeof(tStream*)) {
+		return NULL;
+	}
+
+	tStream* s = *new;
+	free(new);
+
+	return s;
+}
+
 void* pcmain(void* s) {
 	int len;
 	char running = 1;
 
 	tStream* cmdStream = (tStream*) s;
-	tStream** pTxStream = (tStream**)(stream_rcv(cmdStream, &len));
+	tStream* txStream = getStreamFromStream(cmdStream);
+	tStream* rxStream = getStreamFromStream(cmdStream);
+	tStream* rpStream = getStreamFromStream(cmdStream);
 
-	if(len != sizeof(tStream*)) {
-		printf("Error receiving TX/PC stream\n");
+	if(txStream == NULL) {
+		printf("PC:\tUnable to receive stream to TX\n");
 		pthread_exit(NULL);
 	}
 
-	tStream* txStream = *pTxStream;
-	free(pTxStream);
-
-	tStream** pRxStream = (tStream**)(stream_rcv(cmdStream, &len));
-
-	if(len != sizeof(tStream*)) {
-		printf("Error receiving RX/PC stream\n");
+	if(rxStream == NULL) {
+		printf("PC:\tUnable to receive stream to RX\n");
 		pthread_exit(NULL);
 	}
 
-	tStream* rxStream = *pRxStream;
-	free(pRxStream);
-
-	tStream** pRpStream = (tStream**)(stream_rcv(cmdStream, &len));
-
-	if(len != sizeof(tStream*)) {
-		printf("Error receiving RP/PC stream\n");
+	if(rpStream == NULL) {
+		printf("PC:\tUnable to receive stream to RP\n");
 		pthread_exit(NULL);
 	}
-
-	tStream* rpStream = *pRpStream;
-	free(pRpStream);
 
 	lHeartbeat* sent = NULL;
 	lResponse* unmatched = NULL;
