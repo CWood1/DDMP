@@ -13,20 +13,6 @@
 #include <pthread.h>
 #include <errno.h>
 
-tStream* getStreamFromStream(tStream* cmdStream) {
-	int len;
-	tStream** new = (tStream**)(stream_rcv(cmdStream, &len));
-
-	if(len != sizeof(tStream*)) {
-		return NULL;
-	}
-
-	tStream* s = *new;
-	free(new);
-
-	return s;
-}
-
 void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
 	int len;
 	lHeartbeat* next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
