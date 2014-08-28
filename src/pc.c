@@ -95,6 +95,7 @@ void* handleUnmatchedResponse(lResponse** unmatched, response* r) {
 
 	cur->next = NULL;
 	cur->r = r;
+	cur->counter = 0;
 	return cur;
 }
 
@@ -337,6 +338,7 @@ void* pcmain(void* s) {
 						lResponse* x = cur->next;
 						free(cur->r);
 						free(cur);
+						cur = x;
 					}
 				}
 			}
