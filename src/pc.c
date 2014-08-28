@@ -65,6 +65,39 @@ void handleReceivedHeartbeat(heartbeat* h, struct in_addr addrv4, tStream* rpStr
 	stream_send(rpStream, (char*)h, sizeof(heartbeat));
 }
 
+void* handleUnmatchedResponse(lResponse** unmatched, response* r) {
+	lResponse* cur = *unmatched;
+
+	if(cur == NULL) {
+		*unmatched = malloc(sizeof(lResponse));
+
+		if(*unmatched == NULL) {
+			return NULL;
+		}
+
+		cur = *unmatched;
+
+		cur->prev = NULL;
+	} else {
+		while(cur->next != NULL) {
+			cur = cur->next;
+		}
+
+		cur->next = malloc(sizeof(lResponse));
+
+		if(cur->next == NULL) {
+			return NULL;
+		}
+
+		cur->next->prev = cur;
+		cur = cur->next;
+	}
+
+	cur->next = NULL;
+	cur->r = r;
+	return cur;
+}
+
 void* pcmain(void* s) {
 	int len;
 	char running = 1;
@@ -155,52 +188,13 @@ void* pcmain(void* s) {
 						free(cur);
 
 						free(r);
-					} else {
-						lResponse* current = unmatched;
-
-						if(current == NULL) {
-							unmatched = malloc(sizeof(lResponse));
-							unmatched->next = NULL;
-							unmatched->prev = NULL;
-
-							current = unmatched;
-						} else {
-							while(current->next != NULL) {
-								current = current->next;
-							}
-
-							current->next = malloc(sizeof(lResponse));
-							current->next->prev = current;
-							current = current->next;
-							current->next = NULL;
-						}
-
-						current->r = r;
+					} else if(handleUnmatchedResponse(&unmatched, r) == NULL) {
+						printf("malloc error in PC\n");
+						pthread_exit(NULL);
 					}
-						// TODO: Add support for broadcast heartbeats
-						// here, and properly deal with unmatched
-						// responses (both require UCI)
-				} else {
-					lResponse* current = unmatched;
-
-					if(current == NULL) {
-						unmatched = malloc(sizeof(lResponse));
-						unmatched->next = NULL;
-						unmatched->prev = NULL;
-
-						current = unmatched;
-					} else {
-						while(current->next != NULL) {
-							current = current->next;
-						}
-
-						current->next = malloc(sizeof(lResponse));
-						current->next->prev = current;
-						current = current->next;
-						current->next = NULL;
-					}
-
-					current->r = r;
+				} else if(handleUnmatchedResponse(&unmatched, r) == NULL) {
+					printf("malloc error in PC\n");
+					pthread_exit(NULL);
 				}
 	 		}
 
