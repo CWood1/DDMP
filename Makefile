@@ -6,8 +6,7 @@ PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
-
-TARGET_LIBS += -pthread
+include $(INCLUDE_DIR)/cmake.mk
 
 define Package/dhcpext
 	SECTION:=utils
@@ -23,17 +22,6 @@ endef
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
-
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		LIBS="-nodefaultlibs -lgcc -lc -lpthread" \
-		LDFLAGS="$(EXTRA_LDFLAGS)" \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		$(TARGET_CONFIGURE_OPTS) \
-		CROSS="$(TARGET_CROSS)" \
-		ARCH="$(ARCH)" \
-		$(1);
 endef
 
 define Package/dhcpext/install
