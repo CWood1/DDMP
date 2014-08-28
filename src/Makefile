@@ -12,10 +12,10 @@ stream.o: stream.c
 	$(CC) $(CFLAGS) -c stream.c
 proto.o: proto.c
 	$(CC) $(CFLAGS) -c proto.c
-pc.o: pc.c
-	$(CC) $(CFLAGS) -c pc.c
+pc.o: pc/pc.c
+	$(CC) $(CFLAGS) -c pc/pc.c
 rp.o: rp.c
 	$(CC) $(CFLAGS) -c rp.c
 
 clean:
-	rm *.o dhcpext
+	rm -r *.o dhcpext

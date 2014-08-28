@@ -1,5 +1,5 @@
 #include "rx.h"
-#include "pc.h"
+#include "pc/pc.h"
 #include "common.h"
 #include "stream.h"
 #include "proto.h"

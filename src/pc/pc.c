@@ -1,6 +1,6 @@
 #include "pc.h"
-#include "stream.h"
-#include "common.h"
+#include "../stream.h"
+#include "../common.h"
 
 #include <stdio.h>
 #include <stdlib.h>

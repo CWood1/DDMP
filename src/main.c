@@ -7,7 +7,7 @@
 
 #include "rx.h"
 #include "tx.h"
-#include "pc.h"
+#include "pc/pc.h"
 #include "rp.h"
 #include "stream.h"
 #include "dhcplease.h"
