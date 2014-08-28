@@ -132,6 +132,49 @@ int checkMatchedResponse(lHeartbeat** sent, response* r) {
 	return 1;
 }
 
+int handleResponse(response* r, lHeartbeat** sent, lResponse** unmatched, struct in_addr addrv4) {
+	printf("Response received (%s):\n",
+		inet_ntoa(addrv4));
+	printResponse(r);
+
+	if(sent == NULL || checkMatchedResponse(sent, r) == 0) {
+		if(handleUnmatchedResponse(unmatched, r) == NULL) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+int getReceivedMessages(tStream* rxStream, tStream* rpStream,
+		lHeartbeat** sent, lResponse** unmatched) {
+	int len;
+	message* m = (message*)(stream_rcv_nblock(rxStream, &len));
+
+	while(m != NULL) {
+		struct in_addr addrv4;
+		addrv4.s_addr = m->addrv4;
+
+		if(isHeartbeat(m->buffer, m->bufferSize)) { 
+			heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
+			handleReceivedHeartbeat(h, addrv4, rpStream);
+			free(h);
+		} else {
+			response* r = deserializeResponse(m->buffer, m->bufferSize);
+			if(handleResponse(r, sent, unmatched, addrv4) == -1) {
+				return -1;
+			}
+		}
+
+		free(m->buffer);
+		free(m);
+
+		m = (message*)(stream_rcv_nblock(rxStream, &len));
+	}
+
+	return 0;
+}
+
 void* pcmain(void* s) {
 	int len;
 	char running = 1;
@@ -173,35 +216,9 @@ void* pcmain(void* s) {
 		}
 
 		getSentHeartbeats(&sent, txStream);
-
-		message* m = (message*)(stream_rcv_nblock(rxStream, &len));
-
-		while(m != NULL) {
-			struct in_addr addrv4;
-			addrv4.s_addr = m->addrv4;
-
-			if(isHeartbeat(m->buffer, m->bufferSize)) {
-				heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
-				handleReceivedHeartbeat(h, addrv4, rpStream);
-				free(h);
-			} else {
-				printf("Response received (%s):\n",
-					inet_ntoa(addrv4));
-
-				response* r = deserializeResponse(m->buffer, m->bufferSize);
-				printResponse(r);
-
-				if(sent == NULL || checkMatchedResponse(&sent, r) == 0) {
-					if(handleUnmatchedResponse(&unmatched, r) == NULL) {
-						printf("malloc error in PC\n");
-						pthread_exit(NULL);
-					}
-				}
-	 		}
-
-			free(m->buffer);
-			free(m);
-			m = (message*)(stream_rcv_nblock(rxStream, &len));
+		if(getReceivedMessages(rxStream, rpStream, &sent, &unmatched) == -1) {
+			printf("malloc error in PC\n");
+			pthread_exit(NULL);
 		}
 
 		if(sent != NULL) {
