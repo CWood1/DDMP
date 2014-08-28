@@ -99,6 +99,39 @@ void* handleUnmatchedResponse(lResponse** unmatched, response* r) {
 	return cur;
 }
 
+int checkMatchedResponse(lHeartbeat** sent, response* r) {
+	lHeartbeat* cur = *sent;
+
+	while(cur->h->magic != r->magic) {
+		if(cur->next != NULL) {
+			cur = cur->next;
+		} else {
+			return 0;
+		}
+	}
+
+	printf("Response matches:\n");
+	printHeartbeat(cur->h);
+
+	if(cur->next != NULL) {
+		cur->next->prev = cur->prev;
+	}
+
+	if(cur->prev != NULL) {
+		cur->prev->next = cur->next;
+	}
+
+	if(cur == *sent) {
+		*sent = cur->next;
+	}
+
+	free(cur->h);
+	free(cur);
+	free(r);
+
+	return 1;
+}
+
 void* pcmain(void* s) {
 	int len;
 	char running = 1;
@@ -158,44 +191,11 @@ void* pcmain(void* s) {
 				response* r = deserializeResponse(m->buffer, m->bufferSize);
 				printResponse(r);
 
-				if(sent != NULL) {
-					lHeartbeat* cur = sent;
-
-					while(cur->h->magic != r->magic) {
-						if(cur->next != NULL) {
-							cur = cur->next;
-						} else {
-							break;
-						}
-					}
-
-					if(cur->h->magic == r->magic) {
-						printf("Response matches:\n");
-						printHeartbeat(cur->h);
-
-						if(cur->next != NULL) {
-							cur->next->prev = cur->prev;
-						}
-
-						if(cur->prev != NULL) {
-							cur->prev->next = cur->next;
-						}
-
-						if(cur == sent) {
-							sent = cur->next;
-						}
-
-						free(cur->h);
-						free(cur);
-
-						free(r);
-					} else if(handleUnmatchedResponse(&unmatched, r) == NULL) {
+				if(sent == NULL || checkMatchedResponse(&sent, r) == 0) {
+					if(handleUnmatchedResponse(&unmatched, r) == NULL) {
 						printf("malloc error in PC\n");
 						pthread_exit(NULL);
 					}
-				} else if(handleUnmatchedResponse(&unmatched, r) == NULL) {
-					printf("malloc error in PC\n");
-					pthread_exit(NULL);
 				}
 	 		}
 
