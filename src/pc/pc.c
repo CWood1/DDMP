@@ -1,5 +1,6 @@
 #include "pc.h"
 #include "heartbeat.h"
+#include "response.h"
 #include "../stream.h"
 #include "../common.h"
 
@@ -22,87 +23,6 @@ void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
 		handleSentHeartbeat(sent, next);
 		next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 	}
-}
-
-void* handleUnmatchedResponse(lResponse** unmatched, response* r) {
-	lResponse* cur = *unmatched;
-
-	if(cur == NULL) {
-		*unmatched = malloc(sizeof(lResponse));
-
-		if(*unmatched == NULL) {
-			return NULL;
-		}
-
-		cur = *unmatched;
-
-		cur->prev = NULL;
-	} else {
-		while(cur->next != NULL) {
-			cur = cur->next;
-		}
-
-		cur->next = malloc(sizeof(lResponse));
-
-		if(cur->next == NULL) {
-			return NULL;
-		}
-
-		cur->next->prev = cur;
-		cur = cur->next;
-	}
-
-	cur->next = NULL;
-	cur->r = r;
-	cur->counter = 0;
-	return cur;
-}
-
-int checkMatchedResponse(lHeartbeat** sent, response* r) {
-	lHeartbeat* cur = *sent;
-
-	while(cur->h->magic != r->magic) {
-		if(cur->next != NULL) {
-			cur = cur->next;
-		} else {
-			return 0;
-		}
-	}
-
-	printf("Response matches:\n");
-	printHeartbeat(cur->h);
-
-	if(cur->next != NULL) {
-		cur->next->prev = cur->prev;
-	}
-
-	if(cur->prev != NULL) {
-		cur->prev->next = cur->next;
-	}
-
-	if(cur == *sent) {
-		*sent = cur->next;
-	}
-
-	free(cur->h);
-	free(cur);
-	free(r);
-
-	return 1;
-}
-
-int handleResponse(response* r, lHeartbeat** sent, lResponse** unmatched, struct in_addr addrv4) {
-	printf("Response received (%s):\n",
-		inet_ntoa(addrv4));
-	printResponse(r);
-
-	if(sent == NULL || checkMatchedResponse(sent, r) == 0) {
-		if(handleUnmatchedResponse(unmatched, r) == NULL) {
-			return -1;
-		}
-	}
-
-	return 0;
 }
 
 int getReceivedMessages(tStream* rxStream, tStream* rpStream,

@@ -9,6 +9,7 @@
 
 void handleSentHeartbeat(lHeartbeat**, lHeartbeat*);
 void handleReceivedHeartbeat(heartbeat*, struct in_addr, tStream*);
+int checkMatchedHeartbeat(lHeartbeat**, response*);
 
 #endif
 

@@ -5,6 +5,7 @@
 
 #include <netinet/in.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 void handleSentHeartbeat(lHeartbeat** sent, lHeartbeat* next) {
 	struct in_addr addrv4;
@@ -34,4 +35,41 @@ void handleReceivedHeartbeat(heartbeat* h, struct in_addr addrv4, tStream* rpStr
 	printf("Heartbeat received(%s):\n", inet_ntoa(addrv4));
 	printHeartbeat(h);
 	stream_send(rpStream, (char*)h, sizeof(heartbeat));
+}
+
+int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {
+	lHeartbeat* cur = *sent;
+
+	if(cur == NULL) {
+		return 0;
+	}
+
+	while(cur->h->magic != r->magic) {
+		if(cur->next != NULL) {
+			cur = cur->next;
+		} else {
+			return 0;
+		}
+	}
+
+	printf("Response matches:\n");
+	printHeartbeat(cur->h);
+
+	if(cur->next != NULL) {
+		cur->next->prev = cur->prev;
+	}
+
+	if(cur->prev != NULL) {
+		cur->prev->next = cur->next;
+	}
+
+	if(cur == *sent) {
+		*sent = cur->next;
+	}
+
+	free(cur->h);
+	free(cur);
+	free(r);
+
+	return 1;
 }
