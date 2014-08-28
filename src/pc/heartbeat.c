@@ -3,8 +3,26 @@
 #include "../stream.h"
 
 #include <netinet/in.h>
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+void removeHeartbeatFromList(lHeartbeat** list, lHeartbeat* cur) {
+	if(cur->next != NULL) {
+		cur->next->prev = cur->prev;
+	}
+
+	if(cur->prev != NULL) {
+		cur->prev->next = cur->next;
+	}
+
+	if(cur == *list) {
+		*list = cur->next;
+	}
+
+	free(cur->h);
+	free(cur);
+}
 
 void handleSentHeartbeat(lHeartbeat** sent, lHeartbeat* next) {
 	struct in_addr addrv4;
@@ -54,21 +72,34 @@ int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {
 	printf("Response matches:\n");
 	printHeartbeat(cur->h);
 
-	if(cur->next != NULL) {
-		cur->next->prev = cur->prev;
-	}
-
-	if(cur->prev != NULL) {
-		cur->prev->next = cur->next;
-	}
-
-	if(cur == *sent) {
-		*sent = cur->next;
-	}
-
-	free(cur->h);
-	free(cur);
+	removeHeartbeatFromList(sent, cur);
 	free(r);
 
 	return 1;
+}
+
+void removeTimedoutHeartbeats(lHeartbeat** sent) {
+	lHeartbeat* cur = *sent;
+
+	if(cur == NULL) {
+		return;
+	}
+
+	struct timeval now;
+	gettimeofday(&now, NULL);
+
+	while(cur != NULL) {
+		if(cur->timeSent.tv_sec > now.tv_sec ||
+				now.tv_usec - cur->timeSent.tv_usec > 400000) {
+				// If more than 400ms has passed, remove from list
+			printf("Timedout heartbeat:\n");
+			printHeartbeat(cur->h);
+
+			lHeartbeat* next = cur->next;
+			removeHeartbeatFromList(sent, cur);
+			cur = next;
+		} else {
+			cur = cur->next;
+		}
+	}
 }

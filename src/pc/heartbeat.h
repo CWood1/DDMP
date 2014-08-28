@@ -17,9 +17,11 @@ typedef struct lHeartbeat {
 	struct timeval timeSent;
 } lHeartbeat;
 
+void removeHeartbeatFromList(lHeartbeat**, lHeartbeat*);
 void handleSentHeartbeat(lHeartbeat**, lHeartbeat*);
 void handleReceivedHeartbeat(heartbeat*, struct in_addr, tStream*);
 int checkMatchedHeartbeat(lHeartbeat**, response*);
+void removeTimedoutHeartbeats(lHeartbeat**);
 
 #endif
 
