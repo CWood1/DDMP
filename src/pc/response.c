@@ -23,6 +23,19 @@ void removeResponseFromList(lResponse** list, lResponse* cur) {
 	free(cur);
 }
 
+void freeResponseList(lResponse* list) {
+	lResponse* cur = list;
+
+	while(cur != NULL) {
+		lResponse* next = cur->next;
+
+		free(cur->r);
+		free(cur);
+
+		cur = next;
+	}
+}
+
 void* handleUnmatchedResponse(lResponse** unmatched, response* r) {
 	lResponse* cur = *unmatched;
 

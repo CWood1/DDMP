@@ -16,6 +16,7 @@ typedef struct lResponse {
 } lResponse;
 
 void removeResponseFromList(lResponse**, lResponse*);
+void freeResponseList(lResponse*);
 void* handleUnmatchedResponse(lResponse**, response*);
 int handleResponse(response*, lHeartbeat**, lResponse**, struct in_addr);
 void checkUnmatchedList(lResponse**, lHeartbeat**);

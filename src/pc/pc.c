@@ -67,6 +67,7 @@ void* pcmain(void* s) {
 	}
 
 	freeHeartbeatList(sent);
+	freeResponseList(unmatched);
 
 	printf("pc shutting down.\n");
 	pthread_exit(NULL);
