@@ -59,6 +59,12 @@ void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
 	}
 }
 
+void handleReceivedHeartbeat(heartbeat* h, struct in_addr addrv4, tStream* rpStream) {
+	printf("Heartbeat received (%s):\n", inet_ntoa(addrv4));
+	printHeartbeat(h);
+	stream_send(rpStream, (char*)h, sizeof(heartbeat));
+}
+
 void* pcmain(void* s) {
 	int len;
 	char running = 1;
@@ -108,13 +114,8 @@ void* pcmain(void* s) {
 			addrv4.s_addr = m->addrv4;
 
 			if(isHeartbeat(m->buffer, m->bufferSize)) {
-				printf("Heartbeat received (%s):\n",
-					inet_ntoa(addrv4));
-
 				heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
-				printHeartbeat(h);
-
-				stream_send(rpStream, (char*)h, sizeof(heartbeat));
+				handleReceivedHeartbeat(h, addrv4, rpStream);
 				free(h);
 			} else {
 				printf("Response received (%s):\n",
