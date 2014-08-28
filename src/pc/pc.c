@@ -1,4 +1,5 @@
 #include "pc.h"
+#include "heartbeat.h"
 #include "../stream.h"
 #include "../common.h"
 
@@ -18,37 +19,9 @@ void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
 	lHeartbeat* next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 
 	while(next != NULL) {
-		if(*sent == NULL) {
-			*sent = next;
-
-			next->prev = NULL;
-			next->next = NULL;
-		} else {
-			lHeartbeat* cur = *sent;
-
-			while(cur->next != NULL) {
-				cur = cur->next;
-			}
-
-			cur->next = next;
-			next->prev = cur;
-			next->next = NULL;
-		}
-
-		struct in_addr addrv4;
-		addrv4.s_addr = next->addrv4;
-
-		printf("Heartbeat sent(%s):\n", inet_ntoa(addrv4));
-		printHeartbeat(next->h);
-
+		handleSentHeartbeat(sent, next);
 		next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 	}
-}
-
-void handleReceivedHeartbeat(heartbeat* h, struct in_addr addrv4, tStream* rpStream) {
-	printf("Heartbeat received (%s):\n", inet_ntoa(addrv4));
-	printHeartbeat(h);
-	stream_send(rpStream, (char*)h, sizeof(heartbeat));
 }
 
 void* handleUnmatchedResponse(lResponse** unmatched, response* r) {

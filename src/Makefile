@@ -1,5 +1,5 @@
-dhcpext: main.o common.o stream.o proto.o tx.o rx.o pc.o rp.o dhcplease.o
-	$(CC) $(LDFLAGS) $(LIBS) main.o common.o stream.o proto.o tx.o rx.o pc.o rp.o dhcplease.o -o dhcpext
+dhcpext: main.o common.o stream.o proto.o tx.o rx.o pc.o rp.o dhcplease.o heartbeat.o
+	$(CC) $(LDFLAGS) $(LIBS) main.o common.o stream.o proto.o tx.o rx.o pc.o rp.o dhcplease.o heartbeat.o -o dhcpext
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c
 tx.o: tx.c
@@ -18,6 +18,8 @@ rp.o: rp.c
 	$(CC) $(CFLAGS) -c rp.c
 common.o: common.c
 	$(CC) $(CFLAGS) -c common.c
+heartbeat.o: pc/heartbeat.c
+	$(CC) $(CFLAGS) -c pc/heartbeat.c
 
 clean:
 	rm -r *.o dhcpext
