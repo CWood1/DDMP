@@ -18,6 +18,7 @@ typedef struct lHeartbeat {
 } lHeartbeat;
 
 void removeHeartbeatFromList(lHeartbeat**, lHeartbeat*);
+void freeHeartbeatList(lHeartbeat*);
 void handleSentHeartbeat(lHeartbeat**, lHeartbeat*);
 void handleReceivedHeartbeat(heartbeat*, struct in_addr, tStream*);
 int checkMatchedHeartbeat(lHeartbeat**, response*);

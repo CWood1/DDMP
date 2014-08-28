@@ -24,6 +24,19 @@ void removeHeartbeatFromList(lHeartbeat** list, lHeartbeat* cur) {
 	free(cur);
 }
 
+void freeHeartbeatList(lHeartbeat* list) {
+	lHeartbeat* cur = list;
+
+	while(cur != NULL) {
+		lHeartbeat* next = cur->next;
+
+		free(cur->h);
+		free(cur);
+
+		cur = next;
+	}
+}
+
 void handleSentHeartbeat(lHeartbeat** sent, lHeartbeat* next) {
 	struct in_addr addrv4;
 	addrv4.s_addr = next->addrv4;

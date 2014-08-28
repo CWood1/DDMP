@@ -146,15 +146,7 @@ void* pcmain(void* s) {
 		}
 	}
 
-	lHeartbeat* cur = sent;
-	while(cur->next != NULL) {
-		free(cur->h);
-		cur = cur->next;
-		free(cur->prev);
-	}
-
-	free(cur->h);
-	free(cur);
+	freeHeartbeatList(sent);
 
 	printf("pc shutting down.\n");
 	pthread_exit(NULL);
