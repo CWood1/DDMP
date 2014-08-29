@@ -26,15 +26,12 @@ void* txmain(void* stream) {
 	char* str_directaddr = stream_rcv(cmdStream, &len);
 	char* bcastActive = stream_rcv(cmdStream, &len);
 
-	tStream** pPcStream = (tStream**)(stream_rcv(cmdStream, &len));
+	tStream* pcStream = getStreamFromStream(cmdStream);
 
-	if(len != sizeof(tStream*)) {
-		printf("Error setting up TX/PC stream\n");
+	if(pcStream == NULL) {
+		printf("TX:\tUnable to receive stream to PC\n");
 		pthread_exit(NULL);
 	}
-
-	tStream* pcStream = *pPcStream;
-	free(pPcStream);
 
 	if(strcmp(bcastActive, "1") == 0) {
 		bcastFlag = 1;
