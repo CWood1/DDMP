@@ -83,9 +83,21 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	stream_send(s_tx, argv[1], strlen(argv[1]) + 1);
-	stream_send(s_tx, argv[2], strlen(argv[2]) + 1);
-	stream_send(s_tx, argv[3], strlen(argv[3]) + 1);
+	char* str_txconfig = malloc(strlen(argv[1]) + strlen(argv[2]) + 2);
+	strcpy(str_txconfig, argv[1]);
+	strcat(str_txconfig, " ");
+	strcat(str_txconfig, argv[2]);
+
+	stream_send(s_tx, str_txconfig, strlen(str_txconfig) + 1);
+	free(str_txconfig);
+
+	int flags = 0;
+
+	if(strcmp(argv[3], "1") == 0) {
+		flags |= TXFLAGS_BCAST;
+	}
+	
+	stream_send(s_tx, (char*)(&flags), sizeof(int));
 
 	tStream* s_tx_pc = malloc(sizeof(tStream));
 

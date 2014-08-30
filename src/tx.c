@@ -78,13 +78,28 @@ int sendHeartbeats(struct timeval* last, int flags, int sd, struct sockaddr_in b
 void* txmain(void* stream) {
 	int sd, rc, len;
 	struct sockaddr_in bcastaddr, directaddr;
-	int bcastFlag = 0;
+	int flags = 0;
 
 	tStream* cmdStream = (tStream*) stream;
 
-	char* str_bcastaddr = stream_rcv(cmdStream, &len);
-	char* str_directaddr = stream_rcv(cmdStream, &len);
-	char* bcastActive = stream_rcv(cmdStream, &len);
+	char* str_config = stream_rcv(cmdStream, &len);
+	int* pFlags = (int*)(stream_rcv(cmdStream, &len));
+
+	if(str_config == NULL) {
+		printf("Unable to receive configuration for TX\n");
+		pthread_exit(NULL);
+	}
+
+	char* str_bcastaddr = strtok(str_config, " ");
+	char* str_directaddr = strtok(NULL, " ");
+
+	if(pFlags == NULL) {
+		printf("Unable to receive configuration flags for TX\n");
+		pthread_exit(NULL);
+	}
+
+	flags = *pFlags;
+	free(pFlags);
 
 	tStream* pcStream = getStreamFromStream(cmdStream);
 
@@ -92,12 +107,6 @@ void* txmain(void* stream) {
 		printf("TX:\tUnable to receive stream to PC\n");
 		pthread_exit(NULL);
 	}
-
-	if(strcmp(bcastActive, "1") == 0) {
-		bcastFlag = 1;
-	}
-
-	free(bcastActive);
 
 	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket error");
@@ -119,8 +128,6 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	free(str_bcastaddr);
-
 	memset(&directaddr, 0, sizeof(directaddr));
 	directaddr.sin_family = AF_INET;
 	directaddr.sin_port = htons(PORT);
@@ -131,13 +138,13 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	free(str_directaddr);
+	free(str_config);
 
 	struct timeval last;
 	last.tv_sec = 0;
 
 	while(1) {
-		switch(sendHeartbeats(&last, bcastFlag, sd, bcastaddr, directaddr, pcStream)) {
+		switch(sendHeartbeats(&last, flags, sd, bcastaddr, directaddr, pcStream)) {
 			case 1:
 				printf("Unable to send broadcast heartbeat.\n");
 				close(sd);
@@ -164,9 +171,9 @@ void* txmain(void* stream) {
 				t = strtok(NULL, " ");
 
 				if(t == "1") {
-					bcastFlag = 1;
+					flags |= TXFLAGS_BCAST;
 				} else {
-					bcastFlag = 0;
+					flags &= ~TXFLAGS_BCAST;
 				}
 			}
 
