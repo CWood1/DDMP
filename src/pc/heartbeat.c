@@ -78,7 +78,7 @@ int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {
 		if(cur->next != NULL) {
 			cur = cur->next;
 		} else {
-			return 0;
+			return 1;
 		}
 	}
 
@@ -88,7 +88,7 @@ int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {
 	removeHeartbeatFromList(sent, cur);
 	free(r);
 
-	return 1;
+	return 0;
 }
 
 void removeTimedoutHeartbeats(lHeartbeat** sent) {

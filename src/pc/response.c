@@ -96,7 +96,9 @@ void checkUnmatchedList(lResponse** unmatched, lHeartbeat** sent) {
 				printResponse(cur->r);
 			}
 
+			lResponse* next = cur->next;
 			removeResponseFromList(unmatched, cur);
+			cur = next;
 		}
 	}
 }

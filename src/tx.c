@@ -23,6 +23,7 @@ lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, tStream* pcStream, in
 
 	int rc = sendto(sd, buffer, length, 0,
 		(struct sockaddr*)&addr, sizeof(addr));
+	free(buffer);
 
 	if(rc < 0) {
 		return NULL;
@@ -75,31 +76,60 @@ int sendHeartbeats(struct timeval* last, int flags, int sd, struct sockaddr_in b
 	return 0;
 }
 
-void* txmain(void* stream) {
-	int sd, rc, len;
-	struct sockaddr_in bcastaddr, directaddr;
-	int flags = 0;
-
-	tStream* cmdStream = (tStream*) stream;
+int getConfig(tStream* cmdStream, char** str_bcastaddr, char** str_directaddr,
+		int* flags) {
+	int len;
 
 	char* str_config = stream_rcv(cmdStream, &len);
 	int* pFlags = (int*)(stream_rcv(cmdStream, &len));
 
-	if(str_config == NULL) {
-		printf("Unable to receive configuration for TX\n");
-		pthread_exit(NULL);
-	}
+	if(str_config == NULL)
+		return 1;
 
-	char* str_bcastaddr = strtok(str_config, " ");
-	char* str_directaddr = strtok(NULL, " ");
+	if(pFlags == NULL)
+		return 1;
 
-	if(pFlags == NULL) {
-		printf("Unable to receive configuration flags for TX\n");
-		pthread_exit(NULL);
-	}
+	char* tstr_bcastaddr = strtok(str_config, " ");
+	char* tstr_directaddr = strtok(str_config, " ");
 
-	flags = *pFlags;
+	if(tstr_bcastaddr == NULL)
+		return 1;
+
+	if(tstr_directaddr == NULL)
+		return 1;
+
+	*str_bcastaddr = malloc(strlen(tstr_bcastaddr) + 1);
+	*str_directaddr = malloc(strlen(tstr_directaddr) + 1);
+
+	if(*str_bcastaddr == NULL)
+		return 1;
+
+	if(*str_directaddr == NULL)
+		return 1;
+
+	strcpy(*str_bcastaddr, tstr_bcastaddr);
+	strcpy(*str_directaddr, tstr_directaddr);
+
+	free(str_config);
+
+	*flags = *pFlags;
 	free(pFlags);
+
+	return 0;
+}
+
+void* txmain(void* stream) {
+	int sd, rc, len;
+	struct sockaddr_in bcastaddr, directaddr;
+	int flags = 0;
+	char* str_bcastaddr, *str_directaddr;
+
+	tStream* cmdStream = (tStream*) stream;
+
+	if(getConfig(cmdStream, &str_bcastaddr, &str_directaddr, &flags) == 1) {
+		printf("TX:\tUnable to receive configuration.\n");
+		pthread_exit(NULL);
+	}
 
 	tStream* pcStream = getStreamFromStream(cmdStream);
 
@@ -127,6 +157,7 @@ void* txmain(void* stream) {
 		perror("Unable to broadcast");
 		pthread_exit(NULL);
 	}
+	free(str_bcastaddr);
 
 	memset(&directaddr, 0, sizeof(directaddr));
 	directaddr.sin_family = AF_INET;
@@ -137,8 +168,7 @@ void* txmain(void* stream) {
 		perror("Unable to send direct heartbeat");
 		pthread_exit(NULL);
 	}
-
-	free(str_config);
+	free(str_directaddr);
 
 	struct timeval last;
 	last.tv_sec = 0;
