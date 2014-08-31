@@ -118,6 +118,21 @@ int getConfig(tStream* cmdStream, char** str_bcastaddr, char** str_directaddr,
 	return 0;
 }
 
+int setupSocket() {
+	int sd;
+	int broadcast = 1;
+
+	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		return -1;
+	}
+
+	if(setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (void*)&broadcast, sizeof(broadcast)) < 0) {
+		return -1;
+	}
+
+	return sd;
+}
+
 void* txmain(void* stream) {
 	int sd, rc, len;
 	struct sockaddr_in bcastaddr, directaddr;
@@ -138,14 +153,8 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("socket error");
-		pthread_exit(NULL);
-	}
-
-	int broadcast = 1;
-	if(setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (void*)&broadcast, sizeof(broadcast)) < 0) {
-		perror("Unable to set broadcast");
+	if((sd = setupSocket()) < 0) {
+		perror("Error in setting up socket");
 		pthread_exit(NULL);
 	}
 
