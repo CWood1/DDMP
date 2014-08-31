@@ -45,13 +45,15 @@ lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, tStream* pcStream, in
 	return s;
 }
 
-int sendHeartbeats(struct timeval* last, int flags, int sd, struct sockaddr_in bcastaddr,
+int sendHeartbeats(int flags, int sd, struct sockaddr_in bcastaddr,
 		struct sockaddr_in directaddr, tStream* pcStream) {
+	static struct timeval last = {0, 0};
+
 	struct timeval now;
 	gettimeofday(&now, NULL);
 
-	if(last->tv_sec == 0 ||
-			last->tv_sec < now.tv_sec || (now.tv_usec - last->tv_usec) >= 100000) {
+	if(last.tv_sec == 0 ||
+			last.tv_sec < now.tv_sec || (now.tv_usec - last.tv_usec) >= 100000) {
 		lHeartbeat* sent;
 
 		if(flags & TXFLAGS_BCAST) {
@@ -69,7 +71,7 @@ int sendHeartbeats(struct timeval* last, int flags, int sd, struct sockaddr_in b
 		if(sent == NULL)
 			return 2;
 
-		*last = sent->timeSent;
+		last = sent->timeSent;
 		free(sent);
 	}
 
@@ -133,6 +135,18 @@ int setupSocket() {
 	return sd;
 }
 
+int createAddr(char* addr, struct sockaddr_in* saddr) {
+	memset(saddr, 0, sizeof(struct sockaddr_in));
+	saddr->sin_family = AF_INET;
+	saddr->sin_port = htons(PORT);
+
+	if((saddr->sin_addr.s_addr = inet_addr(addr)) == (unsigned long)INADDR_NONE) {
+		return 1;
+	}
+
+	return 0;
+}
+
 void* txmain(void* stream) {
 	int sd, rc, len;
 	struct sockaddr_in bcastaddr, directaddr;
@@ -158,32 +172,21 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	memset(&bcastaddr, 0, sizeof(bcastaddr));
-	bcastaddr.sin_family = AF_INET;
-	bcastaddr.sin_port = htons(PORT);
-
-	if((bcastaddr.sin_addr.s_addr = inet_addr(str_bcastaddr)) == (unsigned long)INADDR_NONE) {
-		perror("Unable to broadcast");
+	if(createAddr(str_bcastaddr, &bcastaddr) == 1) {
+		perror("Unable to create broadcast address");
 		pthread_exit(NULL);
 	}
+
+	if(createAddr(str_directaddr, &directaddr) == 1) {
+		perror("Unable to create direct address");
+		pthread_exit(NULL);
+	}
+
 	free(str_bcastaddr);
-
-	memset(&directaddr, 0, sizeof(directaddr));
-	directaddr.sin_family = AF_INET;
-	directaddr.sin_port = htons(PORT);
-
-	if((directaddr.sin_addr.s_addr = inet_addr(str_directaddr))
-			== (unsigned long) INADDR_NONE) {
-		perror("Unable to send direct heartbeat");
-		pthread_exit(NULL);
-	}
 	free(str_directaddr);
 
-	struct timeval last;
-	last.tv_sec = 0;
-
 	while(1) {
-		switch(sendHeartbeats(&last, flags, sd, bcastaddr, directaddr, pcStream)) {
+		switch(sendHeartbeats(flags, sd, bcastaddr, directaddr, pcStream)) {
 			case 1:
 				printf("Unable to send broadcast heartbeat.\n");
 				close(sd);
