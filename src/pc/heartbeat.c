@@ -71,7 +71,11 @@ int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {
 	lHeartbeat* cur = *sent;
 
 	if(cur == NULL) {
-		return 0;
+		return 1;
+	}
+
+	if(r == NULL) {
+		return 1;
 	}
 
 	while(cur->h->magic != r->magic) {
@@ -86,7 +90,6 @@ int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {
 	printHeartbeat(cur->h);
 
 	removeHeartbeatFromList(sent, cur);
-	free(r);
 
 	return 0;
 }

@@ -64,7 +64,7 @@ int sendHeartbeats(struct timeval* last, int flags, int sd, struct sockaddr_in b
 			free(sent);
 		}
 
-		sent = sendHeartbeat(sd, directaddr, pcStream, flags & ~(TXFLAGS_BCAST));
+		sent = sendHeartbeat(sd, directaddr, pcStream, flags & ~TXFLAGS_BCAST);
 
 		if(sent == NULL)
 			return 2;
@@ -90,7 +90,7 @@ int getConfig(tStream* cmdStream, char** str_bcastaddr, char** str_directaddr,
 		return 1;
 
 	char* tstr_bcastaddr = strtok(str_config, " ");
-	char* tstr_directaddr = strtok(str_config, " ");
+	char* tstr_directaddr = strtok(NULL, " ");
 
 	if(tstr_bcastaddr == NULL)
 		return 1;
