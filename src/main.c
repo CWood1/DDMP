@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include "rx.h"
-#include "tx.h"
+#include "tx/tx.h"
 #include "pc/pc.h"
 #include "rp.h"
 #include "stream.h"
