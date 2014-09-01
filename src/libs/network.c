@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-int setupSocket() {
+int setupSocket(int flags) {
 	int sd;
 	int broadcast = 1;
 
@@ -17,8 +17,11 @@ int setupSocket() {
 		return -1;
 	}
 
-	if(setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (void*)&broadcast, sizeof(broadcast)) < 0) {
-		return -1;
+	if(flags & NETWORKFLAGS_BCAST) {
+		if(setsockopt(sd, SOL_SOCKET, SO_BROADCAST,
+				(void*)&broadcast, sizeof(broadcast)) < 0) {
+			return -1;
+		}
 	}
 
 	return sd;

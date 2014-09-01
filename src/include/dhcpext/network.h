@@ -3,7 +3,9 @@
 
 #include <netinet/in.h>
 
-int setupSocket();
+#define NETWORKFLAGS_BCAST 1
+
+int setupSocket(int);
 int createAddr(char*, struct sockaddr_in*);
 
 #endif

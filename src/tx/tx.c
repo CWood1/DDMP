@@ -40,7 +40,7 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	if((sd = setupSocket()) < 0) {
+	if((sd = setupSocket(NETWORKFLAGS_BCAST)) < 0) {
 		perror("Error in setting up socket");
 		pthread_exit(NULL);
 	}
