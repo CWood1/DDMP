@@ -16,10 +16,43 @@
 #include <pthread.h>
 #include <errno.h>
 
-void* rxmain(void* stream) {
-	int sd, rc, len;
-	struct sockaddr_in selfaddr, senderaddr, replyaddr;
+int receive(struct sockaddr_in replyaddr, int sd, tStream* pcStream) {
 	char buffer[100];
+	int rc;
+
+	int addrlen = sizeof(replyaddr);
+	rc = recvfrom(sd, (char*)buffer, sizeof(buffer), MSG_DONTWAIT,
+		(struct sockaddr*)&replyaddr, &addrlen);
+
+	if(rc < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+		return 1;
+	} else if(rc >= 0) {
+		message* m = malloc(sizeof(message));
+
+		if(m == NULL) {
+			return 1;
+		}
+
+		m->buffer = malloc(rc);
+
+		if(m->buffer == NULL) {
+			return 1;
+		}
+
+		memcpy(m->buffer, (void*)buffer, rc);
+		m->addrv4 = replyaddr.sin_addr.s_addr;
+		m->bufferSize = rc;
+
+		stream_send(pcStream, (char*)m, sizeof(message));
+		free(m);
+	}
+
+	return 0;
+}
+
+void* rxmain(void* stream) {
+	int sd;
+	struct sockaddr_in selfaddr, replyaddr;
 
 	tStream* cmdStream = (tStream*)stream;
 	tStream* pcStream = getStreamFromStream(cmdStream);
@@ -44,42 +77,18 @@ void* rxmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	if((rc = bind(sd, (struct sockaddr*)&selfaddr, sizeof(selfaddr))) < 0) {
+	if(bind(sd, (struct sockaddr*)&selfaddr, sizeof(selfaddr)) < 0) {
 		perror("Heartbeat receive - bind error.");
 		close(sd);
 		pthread_exit(NULL);
 	}
 
 	while(1) {
-		int senderaddrlen = sizeof(senderaddr);
-		rc = recvfrom(sd, (char*)buffer, sizeof(buffer), MSG_DONTWAIT,
-			(struct sockaddr*)&senderaddr, &senderaddrlen);
+		int len;
 
-		if(rc < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-			perror("recvfrom error");
-			close(sd);
+		if(receive(replyaddr, sd, pcStream) == 1) {
+			printf("Error receiving traffic from network\n");
 			pthread_exit(NULL);
-		} else if(rc >= 0) {
-			message* m = malloc(sizeof(message));
-
-			if(m == NULL) {
-				printf("malloc error in rc\n");
-				pthread_exit(NULL);
-			}
-
-			m->buffer = malloc(rc);
-
-			if(m->buffer == NULL) {
-				printf("malloc error in rc\n");
-				pthread_exit(NULL);
-			}
-
-			memcpy(m->buffer, (void*)buffer, rc);
-			m->addrv4 = senderaddr.sin_addr.s_addr;
-			m->bufferSize = rc;
-			
-			stream_send(pcStream, (char*)m, sizeof(message));
-			free(m);
 		}
 
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
