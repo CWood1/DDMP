@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,12 +28,12 @@ int setupSocket(int flags) {
 	return sd;
 }
 
-int createAddr(char* addr, struct sockaddr_in* saddr) {
+int createAddr(uint32_t addr, struct sockaddr_in* saddr) {
 	memset(saddr, 0, sizeof(struct sockaddr_in));
 	saddr->sin_family = AF_INET;
 	saddr->sin_port = htons(PORT);
 
-	if((saddr->sin_addr.s_addr = inet_addr(addr)) == (unsigned long)INADDR_NONE) {
+	if((saddr->sin_addr.s_addr = addr) == (unsigned long)INADDR_NONE) {
 		return 1;
 	}
 

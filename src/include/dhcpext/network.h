@@ -2,10 +2,11 @@
 #define __NETWORK_H__
 
 #include <netinet/in.h>
+#include <stdint.h>
 
 #define NETWORKFLAGS_BCAST 1
 
 int setupSocket(int);
-int createAddr(char*, struct sockaddr_in*);
+int createAddr(uint32_t, struct sockaddr_in*);
 
 #endif

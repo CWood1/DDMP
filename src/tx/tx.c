@@ -45,12 +45,12 @@ void* txmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	if(createAddr(str_bcastaddr, &bcastaddr) == 1) {
+	if(createAddr(inet_addr(str_bcastaddr), &bcastaddr) == 1) {
 		perror("Unable to create broadcast address");
 		pthread_exit(NULL);
 	}
 
-	if(createAddr(str_directaddr, &directaddr) == 1) {
+	if(createAddr(inet_addr(str_directaddr), &directaddr) == 1) {
 		perror("Unable to create direct address");
 		pthread_exit(NULL);
 	}

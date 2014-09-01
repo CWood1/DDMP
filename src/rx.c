@@ -29,19 +29,20 @@ void* rxmain(void* stream) {
 		pthread_exit(NULL);
 	}
 
-	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+	if((sd = setupSocket(0)) < 0) {
 		perror("Heartbeat receive - socket error.");
 		pthread_exit(NULL);
 	}
 
-	memset(&selfaddr, 0, sizeof(selfaddr));
-	selfaddr.sin_family = AF_INET;
-	selfaddr.sin_port = htons(PORT);
-	selfaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	if(createAddr(htonl(INADDR_ANY), &selfaddr) == 1) {
+		printf("RX: unable to initialize self address\n");
+		pthread_exit(NULL);
+	}
 
-	memset(&replyaddr, 0, sizeof(replyaddr));
-	replyaddr.sin_family = AF_INET;
-	replyaddr.sin_port = htons(PORT);
+	if(createAddr(htonl(INADDR_ANY), &replyaddr) == 1) {
+		printf("RX: unable to initialize reply address\n");
+		pthread_exit(NULL);
+	}
 
 	if((rc = bind(sd, (struct sockaddr*)&selfaddr, sizeof(selfaddr))) < 0) {
 		perror("Heartbeat receive - bind error.");
