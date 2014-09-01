@@ -8,8 +8,8 @@
 #include <dhcpext/tx.h>
 #include <dhcpext/rx.h>
 #include <dhcpext/pc.h>
+#include <dhcpext/rp.h>
 
-#include "rp.h"
 #include "stream.h"
 #include "dhcplease.h"
 
