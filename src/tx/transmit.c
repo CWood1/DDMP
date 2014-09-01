@@ -1,5 +1,5 @@
 #include "transmit.h"
-#include "tx.h"
+#include "flags.h"
 #include "../pc/pc.h"
 #include "../stream.h"
 #include "../proto.h"
@@ -11,9 +11,14 @@
 #include <sys/time.h>
 
 lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, tStream* pcStream, int flags) {
+	int iFlags = 0;
 	int length;
 
-	heartbeat* h = craftHeartbeat(flags);
+	if(flags & TXFLAGS_BCAST) {
+		iFlags |= FLAG_ACTIVE;
+	}
+
+	heartbeat* h = craftHeartbeat(iFlags);
 	char* buffer = serializeHeartbeat(h, &length);
 
 	int rc = sendto(sd, buffer, length, 0,
