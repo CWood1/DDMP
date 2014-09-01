@@ -3,6 +3,8 @@
 #include "response.h"
 #include "../stream.h"
 
+#include <dhcpext/pc.h>
+
 #include <stdlib.h>
 #include <netinet/in.h>
 

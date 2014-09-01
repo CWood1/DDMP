@@ -2,6 +2,8 @@
 #include "../proto.h"
 #include "../stream.h"
 
+#include <dhcpext/pc.h>
+
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <stdio.h>

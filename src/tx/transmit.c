@@ -1,6 +1,7 @@
 #include "transmit.h"
-#include "flags.h"
-#include "../pc/pc.h"
+
+#include <dhcpext/tx.h>
+#include <dhcpext/pc.h>
 #include "../stream.h"
 #include "../proto.h"
 

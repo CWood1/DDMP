@@ -1,8 +1,9 @@
 #include "rx.h"
-#include "pc/pc.h"
 #include "common.h"
 #include "stream.h"
 #include "proto.h"
+
+#include <dhcpext/pc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
