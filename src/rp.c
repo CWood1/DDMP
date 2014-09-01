@@ -18,15 +18,12 @@ void* rpmain(void* s) {
 	int len;
 
 	tStream* cmdStream = (tStream*) s;
-	tStream** pPcStream = (tStream**)(stream_rcv(cmdStream, &len));
+	tStream* pcStream = getStreamFromStream(cmdStream);
 
-	if(len != sizeof(tStream*)) {
-		printf("Error receiving RP/PC stream\n");
+	if(pcStream == NULL) {
+		printf("RP: Unable to receive stream to PC\n");
 		pthread_exit(NULL);
 	}
-
-	tStream* pcStream = *pPcStream;
-	free(pPcStream);
 
 	int sd;
 	struct sockaddr_in replyaddr;
