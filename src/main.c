@@ -6,9 +6,9 @@
 #include <unistd.h>
 
 #include <dhcpext/tx.h>
+#include <dhcpext/rx.h>
 #include <dhcpext/pc.h>
 
-#include "rx.h"
 #include "rp.h"
 #include "stream.h"
 #include "dhcplease.h"

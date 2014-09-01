@@ -4,11 +4,14 @@ project(dhcpext)
 include_directories(include)
 
 add_subdirectory(libs)
+
 add_subdirectory(tx)
+add_subdirectory(rx)
 add_subdirectory(pc)
+
 find_package(Threads)
 
-add_executable(dhcpext common.c dhcplease.c main.c proto.c rp.c rx.c stream.c)
-target_link_libraries(dhcpext common tx pc ${CMAKE_THREAD_LIBS_INIT})
+add_executable(dhcpext common.c dhcplease.c main.c proto.c rp.c stream.c)
+target_link_libraries(dhcpext common tx rx pc ${CMAKE_THREAD_LIBS_INIT})
 
 INSTALL(TARGETS dhcpext RUNTIME DESTINATION /usr/bin/)
