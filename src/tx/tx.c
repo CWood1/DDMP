@@ -3,9 +3,8 @@
 
 #include <dhcpext/tx.h>
 #include <dhcpext/pc.h>
-#include <dhcpext/network.h>
+#include <dhcpext/common.h>
 
-#include "../common.h"
 #include "../stream.h"
 #include "../proto.h"
 

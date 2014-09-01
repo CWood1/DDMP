@@ -1,6 +1,4 @@
-#include "../common.h"
-
-#include <dhcpext/network.h>
+#include <dhcpext/common.h>
 
 #include <stdlib.h>
 #include <string.h>

@@ -1,1 +1,1 @@
-add_library(common network.c)
+add_library(common common.c network.c)
