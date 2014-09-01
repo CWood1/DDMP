@@ -22,16 +22,12 @@ void* rxmain(void* stream) {
 	char buffer[100];
 
 	tStream* cmdStream = (tStream*)stream;
+	tStream* pcStream = getStreamFromStream(cmdStream);
 
-	tStream** pPcStream = (tStream**)(stream_rcv(cmdStream, &len));
-
-	if(len != sizeof(tStream*)) {
-		printf("Error receiving RX/PC stream\n");
+	if(pcStream == NULL) {
+		printf("RX: Error setting up stream to PC\n");
 		pthread_exit(NULL);
 	}
-
-	tStream* pcStream = *pPcStream;
-	free(pPcStream);
 
 	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("Heartbeat receive - socket error.");
