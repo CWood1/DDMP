@@ -1,9 +1,9 @@
 #include "transmit.h"
 #include "config.h"
-#include "network.h"
 
 #include <dhcpext/tx.h>
 #include <dhcpext/pc.h>
+#include <dhcpext/network.h>
 
 #include "../common.h"
 #include "../stream.h"
