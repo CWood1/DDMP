@@ -2,9 +2,9 @@
 #include "response.h"
 #include "api.h"
 #include "../stream.h"
-#include "../common.h"
 
 #include <dhcpext/pc.h>
+#include <dhcpext/common.h>
 
 #include <stdio.h>
 #include <stdlib.h>

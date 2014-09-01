@@ -1,10 +1,10 @@
 #include "receive.h"
-#include "../common.h"
 #include "../stream.h"
 #include "../proto.h"
 
 #include <dhcpext/rx.h>
 #include <dhcpext/pc.h>
+#include <dhcpext/common.h>
 
 #include <stdio.h>
 #include <stdlib.h>

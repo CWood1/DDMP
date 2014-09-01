@@ -1,5 +1,6 @@
-#include "stream.h"
-#include "common.h"
+#include "../stream.h"
+
+#include <dhcpext/common.h>
 
 #include <stdlib.h>
 

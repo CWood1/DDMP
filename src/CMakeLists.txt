@@ -12,7 +12,7 @@ add_subdirectory(rp)
 
 find_package(Threads)
 
-add_executable(dhcpext common.c dhcplease.c main.c proto.c stream.c)
+add_executable(dhcpext dhcplease.c main.c proto.c stream.c)
 target_link_libraries(dhcpext common tx rx pc rp ${CMAKE_THREAD_LIBS_INIT})
 
 INSTALL(TARGETS dhcpext RUNTIME DESTINATION /usr/bin/)
