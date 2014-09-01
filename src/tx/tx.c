@@ -1,6 +1,8 @@
 #include "tx.h"
 #include "transmit.h"
 #include "config.h"
+#include "network.h"
+
 #include "../pc/pc.h"
 #include "../common.h"
 #include "../stream.h"
@@ -16,33 +18,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
-
-int setupSocket() {
-	int sd;
-	int broadcast = 1;
-
-	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		return -1;
-	}
-
-	if(setsockopt(sd, SOL_SOCKET, SO_BROADCAST, (void*)&broadcast, sizeof(broadcast)) < 0) {
-		return -1;
-	}
-
-	return sd;
-}
-
-int createAddr(char* addr, struct sockaddr_in* saddr) {
-	memset(saddr, 0, sizeof(struct sockaddr_in));
-	saddr->sin_family = AF_INET;
-	saddr->sin_port = htons(PORT);
-
-	if((saddr->sin_addr.s_addr = inet_addr(addr)) == (unsigned long)INADDR_NONE) {
-		return 1;
-	}
-
-	return 0;
-}
 
 void* txmain(void* stream) {
 	int sd, rc, len;
