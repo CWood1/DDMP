@@ -48,6 +48,7 @@ void* rpmain(void* s) {
 			if(strcmp(t, "shutdown") == 0) {
 				printf("rp shutting down\n");
 				free(cmd);
+				close(sd);
 				pthread_exit(NULL);
 			}
 
