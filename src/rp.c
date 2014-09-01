@@ -3,6 +3,8 @@
 #include "common.h"
 #include "proto.h"
 
+#include <dhcpext/network.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +17,8 @@
 #include <errno.h>
 
 void* rpmain(void* s) {
-	int len;
+	int sd;
+	struct sockaddr_in replyaddr;
 
 	tStream* cmdStream = (tStream*) s;
 	tStream* pcStream = getStreamFromStream(cmdStream);
@@ -25,19 +28,18 @@ void* rpmain(void* s) {
 		pthread_exit(NULL);
 	}
 
-	int sd;
-	struct sockaddr_in replyaddr;
-
-	if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("RP - socket error\n");
+	if((sd = setupSocket(0)) < 0) {
+		printf("RP: Unable to set up socket\n");
 		pthread_exit(NULL);
 	}
 
-	memset(&replyaddr, 0, sizeof(replyaddr));
-	replyaddr.sin_family = AF_INET;
-	replyaddr.sin_port = htons(PORT);
+	if(createAddr(htonl(INADDR_ANY), &replyaddr) == 1) {
+		printf("RP: Unable to set up reply address\n");
+		pthread_exit(NULL);
+	}
 
 	while(1) {
+		int len;
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
 
 		if(cmd != NULL) {
