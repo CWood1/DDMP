@@ -1,1 +1,1 @@
-add_library(tx tx.c transmit.c)
+add_library(tx tx.c transmit.c config.c)
