@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(dhcpext)
 
+include_directories(include)
+
 add_subdirectory(tx)
 add_subdirectory(pc)
 find_package(Threads)

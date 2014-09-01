@@ -1,8 +1,8 @@
-#include "tx.h"
 #include "transmit.h"
 #include "config.h"
 #include "network.h"
-#include "flags.h"
+
+#include <dhcpext/tx.h>
 
 #include "../pc/pc.h"
 #include "../common.h"

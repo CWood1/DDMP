@@ -1,7 +1,7 @@
 #ifndef __TX_H__
 #define __TX_H__
 
-#include "flags.h"
+#define TXFLAGS_BCAST 1
 
 void* txmain(void*);
 
