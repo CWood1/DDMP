@@ -69,6 +69,9 @@ heartbeat* deserializeHeartbeat(char* s, int length) {
 	memcpy(&(h->flags), s + 1, sizeof(h->flags));
 	memcpy(&(h->magic), s + 5, sizeof(h->magic));
 
+	h->l = NULL;
+	h->n = NULL;
+
 	return h;
 }
 
@@ -79,13 +82,13 @@ void printHeartbeat(heartbeat* h) {
 }
 
 void freeHeartbeat(heartbeat* h) {
-/*	if(h->l != NULL) {
+	if(h->l != NULL) {
 		free(h->l);
 	}
 
 	if(h->n != NULL) {
 		free(h->n);
-	}*/
+	}
 		// Both of these are crude, and do not free a linked list.
 		// When UCI integration happens, these will need rewriting.
 
