@@ -19,7 +19,6 @@ void sigintHandler(int signo) {
 	if(signo == SIGINT) {
 		stream_send(s_tx, "shutdown", strlen("shutdown") + 1);
 		stream_send(s_rx, "shutdown", strlen("shutdown") + 1);
-		stream_send(s_rp, "shutdown", strlen("shutdown") + 1);
 	}
 }
 
@@ -142,7 +141,6 @@ int main(int argc, char** argv) {
 
 	pthread_join(tx, NULL);
 	pthread_join(rx, NULL);
-	pthread_join(rp, NULL);
 		// Wait for the threads to finish before we exit
 
 	stream_send(s_pc, "shutdown", strlen("shutdown") + 1);
@@ -153,6 +151,11 @@ int main(int argc, char** argv) {
 	pthread_join(pc, NULL);
 		// Wait for PC to finish as well
 
+	stream_send(s_rp, "shutdown", strlen("shutdown") + 1);
+	pthread_join(rp, NULL);
+		// End RP after PC, as it will continue to send traffic through
+		// until all streams have been emptied
+	
 	stream_free(s_tx);
 	stream_free(s_rx);
 	stream_free(s_pc);

@@ -77,10 +77,13 @@ int handleResponse(response* r, lHeartbeat** sent, lResponse** unmatched, struct
 	printf("Response received (%s):\n", inet_ntoa(addrv4));
 	printResponse(r);
 
-	if(checkMatchedHeartbeat(sent, r) == 0 && handleUnmatchedResponse(unmatched, r) == NULL) {
-		return -1;
+	if(checkMatchedHeartbeat(sent, r) == 1) {
+		if(handleUnmatchedResponse(unmatched, r) == NULL) {
+			return -1;
+		}
+	} else {
+		free(r);
 	}
-
 
 	return 0;
 }

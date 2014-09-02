@@ -40,7 +40,7 @@ void* rpmain(void* s) {
 		unsigned int len;
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
 
-		if(cmd != NULL) {
+		while(cmd != NULL) {
 			char* t = strtok(cmd, " ");
 
 			if(strcmp(t, "shutdown") == 0) {
@@ -51,6 +51,7 @@ void* rpmain(void* s) {
 			}
 
 			free(cmd);
+			cmd = stream_rcv_nblock(cmdStream, &len);
 		}
 
 		heartbeat* h = (heartbeat*)(stream_rcv_nblock(pcStream, &len));
