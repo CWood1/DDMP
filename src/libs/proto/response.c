@@ -62,3 +62,7 @@ void printResponse(response* r) {
 		((r->ident == 1) ? "Response" : ""),
 		r->flags, r->magic);
 }
+
+void freeResponse(response* r) {
+	free(r);
+}

@@ -30,7 +30,7 @@ int getReceivedMessages(tStream* rxStream, tStream* rpStream,
 		if(isHeartbeat(m->buffer, m->bufferSize)) {
 			heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
 			handleReceivedHeartbeat(h, addrv4, rpStream);
-			free(h);
+			freeHeartbeat(h);
 		} else {
 			response* r = deserializeResponse(m->buffer, m->bufferSize);
 			if(handleResponse(r, sent, unmatched, addrv4) == -1) {

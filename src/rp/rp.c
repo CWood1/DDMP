@@ -63,7 +63,7 @@ void* rpmain(void* s) {
 			int rc = sendto(sd, b, len, 0,
 				(struct sockaddr*)&replyaddr, sizeof(replyaddr));
 
-			free(h);
+			freeHeartbeat(h);
 			free(r);
 			free(b);
 

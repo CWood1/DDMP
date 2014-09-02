@@ -39,11 +39,13 @@ heartbeat* craftHeartbeat(int);
 char* serializeHeartbeat(heartbeat*, int*);
 heartbeat* deserializeHeartbeat(char*, int);
 void printHeartbeat(heartbeat*);
+void freeHeartbeat(heartbeat*);
 
 response* craftResponse(heartbeat*);
 char* serializeResponse(response*, int*);
 response* deserializeResponse(char*, int);
 void printResponse(response*);
+void freeHeartbeat(heartbeat*);
 
 int isHeartbeat(char*, int);
 

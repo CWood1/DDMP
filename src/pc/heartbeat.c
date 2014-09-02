@@ -22,7 +22,7 @@ void removeHeartbeatFromList(lHeartbeat** list, lHeartbeat* cur) {
 		*list = cur->next;
 	}
 
-	free(cur->h);
+	freeHeartbeat(cur->h);
 	free(cur);
 }
 
@@ -32,7 +32,7 @@ void freeHeartbeatList(lHeartbeat* list) {
 	while(cur != NULL) {
 		lHeartbeat* next = cur->next;
 
-		free(cur->h);
+		freeHeartbeat(cur->h);
 		free(cur);
 
 		cur = next;

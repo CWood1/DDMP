@@ -77,3 +77,17 @@ void printHeartbeat(heartbeat* h) {
 		((h->ident == 0) ? "Heartbeat" : ""),
 		h->flags, h->magic);
 }
+
+void freeHeartbeat(heartbeat* h) {
+/*	if(h->l != NULL) {
+		free(h->l);
+	}
+
+	if(h->n != NULL) {
+		free(h->n);
+	}*/
+		// Both of these are crude, and do not free a linked list.
+		// When UCI integration happens, these will need rewriting.
+
+	free(h);
+}
