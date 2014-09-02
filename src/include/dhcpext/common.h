@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "../../stream.h"
+#include <dhcpext/stream.h>
 
 #include <netinet/in.h>
 #include <stdint.h>

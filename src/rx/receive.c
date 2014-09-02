@@ -1,7 +1,7 @@
 #include "receive.h"
-#include "../stream.h"
 
 #include <dhcpext/pc.h>
+#include <dhcpext/stream.h>
 
 #include <stdlib.h>
 #include <string.h>

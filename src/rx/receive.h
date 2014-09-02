@@ -1,7 +1,7 @@
 #ifndef __RECEIVE_H__
 #define __RECEIVE_H__
 
-#include "../stream.h"
+#include <dhcpext/stream.h>
 
 #include <netinet/in.h>
 

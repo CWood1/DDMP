@@ -1,9 +1,9 @@
 #include "receive.h"
-#include "../stream.h"
 
 #include <dhcpext/rx.h>
 #include <dhcpext/pc.h>
 #include <dhcpext/common.h>
+#include <dhcpext/stream.h>
 
 #include <stdio.h>
 #include <stdlib.h>

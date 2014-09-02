@@ -1,10 +1,10 @@
 #include "heartbeat.h"
 #include "response.h"
 #include "api.h"
-#include "../stream.h"
 
 #include <dhcpext/pc.h>
 #include <dhcpext/common.h>
+#include <dhcpext/stream.h>
 
 #include <stdio.h>
 #include <stdlib.h>

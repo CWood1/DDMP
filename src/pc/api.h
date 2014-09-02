@@ -3,7 +3,8 @@
 
 #include "heartbeat.h"
 #include "response.h"
-#include "../stream.h"
+
+#include <dhcpext/stream.h>
 
 void getSentHeartbeats(lHeartbeat**, tStream*);
 int getReceivedMessages(tStream*, tStream*, lHeartbeat**, lResponse**);

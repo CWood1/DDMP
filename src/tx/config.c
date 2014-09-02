@@ -1,5 +1,6 @@
 #include "config.h"
-#include "../stream.h"
+
+#include <dhcpext/stream.h>
 
 #include <stdlib.h>
 #include <string.h>

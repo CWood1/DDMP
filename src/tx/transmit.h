@@ -2,7 +2,7 @@
 #define __TRANSMIT_H__
 
 #include <dhcpext/pc.h>
-#include "../stream.h"
+#include <dhcpext/stream.h>
 
 #include <netinet/in.h>
 

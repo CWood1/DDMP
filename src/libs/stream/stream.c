@@ -1,10 +1,10 @@
+#include <dhcpext/stream.h>
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-
-#include "stream.h"
 
 void stream_init(tStream* stream) {
 	stream->cond = malloc(sizeof(pthread_cond_t));

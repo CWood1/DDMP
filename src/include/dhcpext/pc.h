@@ -2,8 +2,6 @@
 #define __PC_H__
 
 #include <dhcpext/proto.h>
-#include <dhcpext/proto.h>
-#include <dhcpext/proto.h>
 
 #include <stdint.h>
 #include <sys/time.h>

@@ -1,17 +1,17 @@
+#include <dhcpext/tx.h>
+#include <dhcpext/rx.h>
+#include <dhcpext/pc.h>
+#include <dhcpext/rp.h>
+#include <dhcpext/stream.h>
+
+#include "dhcplease.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
-
-#include <dhcpext/tx.h>
-#include <dhcpext/rx.h>
-#include <dhcpext/pc.h>
-#include <dhcpext/rp.h>
-
-#include "stream.h"
-#include "dhcplease.h"
 
 tStream *s_tx, *s_rx, *s_pc, *s_rp;
 

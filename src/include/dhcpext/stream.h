@@ -19,7 +19,7 @@ typedef struct {
 } tStream;
 
 void stream_init(tStream*);			// Initialize a stream
-void stream_free(tStream*);
+void stream_free(tStream*);			// Clean up a stream, freeing memory
 void stream_send(tStream*, char*, int);		// Send a string to a stream
 int stream_length(tStream*);			// Length of data in stream
 char* stream_rcv(tStream*, int*);		// Receive from a stream, blocking

@@ -4,8 +4,7 @@
 #include <dhcpext/tx.h>
 #include <dhcpext/pc.h>
 #include <dhcpext/common.h>
-
-#include "../stream.h"
+#include <dhcpext/stream.h>
 
 #include <stdio.h>
 #include <stdlib.h>
