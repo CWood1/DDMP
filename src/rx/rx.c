@@ -1,6 +1,5 @@
 #include "receive.h"
 #include "../stream.h"
-#include "../proto.h"
 
 #include <dhcpext/rx.h>
 #include <dhcpext/pc.h>

@@ -1,4 +1,4 @@
-#include "proto.h"
+#include <dhcpext/proto.h>
 
 #include <string.h>
 #include <stdlib.h>

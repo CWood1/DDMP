@@ -1,8 +1,8 @@
 #include "../stream.h"
-#include "../proto.h"
 
 #include <dhcpext/rp.h>
 #include <dhcpext/common.h>
+#include <dhcpext/proto.h>
 
 #include <stdio.h>
 #include <stdlib.h>

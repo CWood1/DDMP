@@ -6,7 +6,6 @@
 #include <dhcpext/common.h>
 
 #include "../stream.h"
-#include "../proto.h"
 
 #include <stdio.h>
 #include <stdlib.h>

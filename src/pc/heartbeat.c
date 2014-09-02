@@ -1,8 +1,8 @@
 #include "heartbeat.h"
-#include "../proto.h"
 #include "../stream.h"
 
 #include <dhcpext/pc.h>
+#include <dhcpext/proto.h>
 
 #include <netinet/in.h>
 #include <sys/time.h>

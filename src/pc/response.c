@@ -1,8 +1,8 @@
 #include "response.h"
 #include "heartbeat.h"
-#include "../proto.h"
 
 #include <dhcpext/pc.h>
+#include <dhcpext/proto.h>
 
 #include <stdio.h>
 #include <stdlib.h>

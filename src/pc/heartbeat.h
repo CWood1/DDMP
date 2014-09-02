@@ -2,8 +2,8 @@
 #define __HEARTBEAT_H__
 
 #include <dhcpext/pc.h>
+#include <dhcpext/proto.h>
 
-#include "../proto.h"
 #include "../stream.h"
 
 #include <netinet/in.h>

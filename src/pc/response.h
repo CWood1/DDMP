@@ -2,7 +2,8 @@
 #define __RESPONSE_H__
 
 #include "heartbeat.h"
-#include "../proto.h"
+
+#include <dhcpext/proto.h>
 
 #include <stdint.h>
 #include <netinet/in.h>
