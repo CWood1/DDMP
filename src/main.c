@@ -24,6 +24,12 @@ void sigintHandler(int signo) {
 }
 
 int main(int argc, char** argv) {
+	if(argc != 4) {
+		printf("Usage:\n\t%s <broadcast address> <direct address> <broadcast flag>\n",
+			argv[0]);
+		return 0;
+	}
+
 	pthread_t tx, rx, pc, rp;
 
 	s_tx = malloc(sizeof(tStream));
