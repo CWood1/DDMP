@@ -35,7 +35,7 @@ int checkSubnet(char* ipAddress, char* desiredNetwork, char* subnet) {
 }
 
 void initDhcpLease() {
-	int size = 0;
+	unsigned int size = 0;
 	char* buffer = NULL;
 	FILE* leasefile = fopen("/tmp/dhcp.leases", "r");
 	stringList* l = malloc(sizeof(stringList));
