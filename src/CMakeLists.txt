@@ -3,7 +3,7 @@ project(dhcpext)
 
 if(UNIX)
 	if(CMAKE_COMPILER_IS_GNUCC)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wall -Wextra -pedantic")
 	endif(CMAKE_COMPILER_IS_GNUCC)
 endif(UNIX)
 
