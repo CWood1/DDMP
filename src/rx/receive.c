@@ -14,7 +14,7 @@ int receive(struct sockaddr_in replyaddr, int sd, tStream* pcStream) {
 	char buffer[100];
 	int rc;
 
-	int addrlen = sizeof(replyaddr);
+	socklen_t addrlen = sizeof(replyaddr);
 	rc = recvfrom(sd, (char*)buffer, sizeof(buffer), MSG_DONTWAIT,
 		(struct sockaddr*)&replyaddr, &addrlen);
 

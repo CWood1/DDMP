@@ -6,7 +6,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 void removeResponseFromList(lResponse** list, lResponse* cur) {
 	if(cur->next != NULL) {

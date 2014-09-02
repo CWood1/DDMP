@@ -8,6 +8,8 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 void removeHeartbeatFromList(lHeartbeat** list, lHeartbeat* cur) {
 	if(cur->next != NULL) {

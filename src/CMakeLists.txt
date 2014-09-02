@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 2.6)
 project(dhcpext)
 
+if(UNIX)
+	if(CMAKE_COMPILER_IS_GNUCC)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+	endif(CMAKE_COMPILER_IS_GNUCC)
+endif(UNIX)
+
 include_directories(include)
 
 add_subdirectory(libs)

@@ -18,7 +18,7 @@
 #include <pthread.h>
 
 void* txmain(void* stream) {
-	int sd, rc, len;
+	int sd, len;
 	struct sockaddr_in bcastaddr, directaddr;
 	int flags = 0;
 	char* str_bcastaddr, *str_directaddr;
@@ -82,7 +82,7 @@ void* txmain(void* stream) {
 			} else if(strcmp(t, "bcastflag")) {
 				t = strtok(NULL, " ");
 
-				if(t == "1") {
+				if(strcmp(t, "1") == 0) {
 					flags |= TXFLAGS_BCAST;
 				} else {
 					flags &= ~TXFLAGS_BCAST;
