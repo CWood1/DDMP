@@ -18,7 +18,7 @@
 #include <errno.h>
 
 void* pcmain(void* s) {
-	int len;
+	unsigned int len;
 	char running = 1;
 
 	tStream* cmdStream = (tStream*) s;

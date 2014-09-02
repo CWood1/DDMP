@@ -36,17 +36,17 @@ typedef struct {
 #define FLAG_SHUTDOWN 2
 
 heartbeat* craftHeartbeat(int);
-char* serializeHeartbeat(heartbeat*, int*);
-heartbeat* deserializeHeartbeat(char*, int);
+char* serializeHeartbeat(heartbeat*, unsigned int*);
+heartbeat* deserializeHeartbeat(char*, unsigned int);
 void printHeartbeat(heartbeat*);
 void freeHeartbeat(heartbeat*);
 
 response* craftResponse(heartbeat*);
-char* serializeResponse(response*, int*);
-response* deserializeResponse(char*, int);
+char* serializeResponse(response*, unsigned int*);
+response* deserializeResponse(char*, unsigned int);
 void printResponse(response*);
-void freeHeartbeat(heartbeat*);
+void freeResponse(response*);
 
-int isHeartbeat(char*, int);
+int isHeartbeat(char*, unsigned int);
 
 #endif

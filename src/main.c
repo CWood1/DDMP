@@ -4,8 +4,6 @@
 #include <dhcpext/rp.h>
 #include <dhcpext/stream.h>
 
-#include "dhcplease.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +12,8 @@
 #include <unistd.h>
 
 tStream *s_tx, *s_rx, *s_pc, *s_rp;
+
+void sigintHandler(int);
 
 void sigintHandler(int signo) {
 	if(signo == SIGINT) {

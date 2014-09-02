@@ -7,7 +7,7 @@
 
 int getConfig(tStream* cmdStream, char** str_bcastaddr, char** str_directaddr,
 		int* flags) {
-	int len;
+	unsigned int len;
 
 	char* str_config = stream_rcv(cmdStream, &len);
 	int* pFlags = (int*)(stream_rcv(cmdStream, &len));

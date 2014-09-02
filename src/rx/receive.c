@@ -9,13 +9,30 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <netinet/udp.h>
 
 int receive(struct sockaddr_in replyaddr, int sd, tStream* pcStream) {
-	char buffer[100];
-	int rc;
+	size_t size;
+
+	if(ioctl(sd, FIONREAD, &size) != 0) {
+		return 1;
+	}
+
+	if(size == 0) {
+		return 0;
+	}
+
+	char* buffer = malloc(size);
+
+	if(buffer == NULL) {
+		return 1;
+	}
+
+	ssize_t rc;
 
 	socklen_t addrlen = sizeof(replyaddr);
-	rc = recvfrom(sd, (char*)buffer, sizeof(buffer), MSG_DONTWAIT,
+	rc = recvfrom(sd, (char*)buffer, size, MSG_DONTWAIT,
 		(struct sockaddr*)&replyaddr, &addrlen);
 
 	if(rc < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -27,15 +44,9 @@ int receive(struct sockaddr_in replyaddr, int sd, tStream* pcStream) {
 			return 1;
 		}
 
-		m->buffer = malloc(rc);
-
-		if(m->buffer == NULL) {
-			return 1;
-		}
-
-		memcpy(m->buffer, (void*)buffer, rc);
+		m->buffer = buffer;
 		m->addrv4 = replyaddr.sin_addr.s_addr;
-		m->bufferSize = rc;
+		m->bufferSize = size;
 
 		stream_send(pcStream, (char*)m, sizeof(message));
 		free(m);

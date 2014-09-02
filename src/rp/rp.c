@@ -37,7 +37,7 @@ void* rpmain(void* s) {
 	}
 
 	while(1) {
-		int len;
+		unsigned int len;
 		char* cmd = stream_rcv_nblock(cmdStream, &len);
 
 		if(cmd != NULL) {

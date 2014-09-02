@@ -19,8 +19,7 @@ typedef struct dhcpEntry {
 	struct dhcpEntry* prev;
 } dhcpEntry;
 
-unsigned int addrStringToInt(char*);
-int checkSubnet(char*, char*, char*);
+int checkSubnet(const char*, const char*, const char*);
 void initDhcpLease(void);
 
 #endif

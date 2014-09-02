@@ -4,6 +4,7 @@
 #include <dhcpext/proto.h>
 
 #include <stdint.h>
+#include <stddef.h>
 #include <sys/time.h>
 
 typedef struct lHeartbeat {
@@ -17,7 +18,7 @@ typedef struct lHeartbeat {
 
 typedef struct message {
 	char* buffer;
-	uint32_t bufferSize;
+	size_t bufferSize;
 	uint32_t addrv4;
 } message;
 

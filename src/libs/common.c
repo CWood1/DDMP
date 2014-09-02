@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 tStream* getStreamFromStream(tStream* cmdStream) {
-	int len;
+	unsigned int len;
 	tStream** new = (tStream**)(stream_rcv(cmdStream, &len));
 
 	if(len != sizeof(tStream*)) {

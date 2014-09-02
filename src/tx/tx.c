@@ -18,7 +18,8 @@
 #include <pthread.h>
 
 void* txmain(void* stream) {
-	int sd, len;
+	int sd;
+	unsigned int len;
 	struct sockaddr_in bcastaddr, directaddr;
 	int flags = 0;
 	char* str_bcastaddr, *str_directaddr;

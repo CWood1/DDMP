@@ -36,7 +36,7 @@ heartbeat* craftHeartbeat(int active) {
 	return h;
 }
 
-char* serializeHeartbeat(heartbeat* h, int* length) {
+char* serializeHeartbeat(heartbeat* h, unsigned int* length) {
 	char* s = malloc(9);
 
 	if(s == NULL) {
@@ -46,7 +46,7 @@ char* serializeHeartbeat(heartbeat* h, int* length) {
 
 	memset(s, 0, 9);
 
-	s[0] = h->ident;
+	memcpy(s, &(h->ident), sizeof(h->ident));
 	memcpy(s + 1, &(h->flags), sizeof(h->flags));
 	memcpy(s + 5, &(h->magic), sizeof(h->magic));
 
@@ -54,7 +54,7 @@ char* serializeHeartbeat(heartbeat* h, int* length) {
 	return s;
 }
 
-heartbeat* deserializeHeartbeat(char* s, int length) {
+heartbeat* deserializeHeartbeat(char* s, unsigned int length) {
 	if(length != 9) {
 		return NULL;
 	}
@@ -66,7 +66,7 @@ heartbeat* deserializeHeartbeat(char* s, int length) {
 		pthread_exit(NULL);
 	}
 
-	h->ident = s[0];
+	memcpy(&(h->ident), s, sizeof(h->ident));
 	memcpy(&(h->flags), s + 1, sizeof(h->flags));
 	memcpy(&(h->magic), s + 5, sizeof(h->magic));
 

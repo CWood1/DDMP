@@ -43,7 +43,7 @@ void stream_free(tStream* stream) {
 	}
 }
 
-void stream_send(tStream* stream, char* message, int len) {
+void stream_send(tStream* stream, const char* message, unsigned int len) {
 	pthread_mutex_lock(stream->mut);
 
 	tMessage* cur;
@@ -91,7 +91,7 @@ void stream_send(tStream* stream, char* message, int len) {
 	pthread_cond_signal(stream->cond);
 }
 
-char* stream_rcv(tStream* stream, int* length) {
+char* stream_rcv(tStream* stream, unsigned int* length) {
 	pthread_mutex_lock(stream->mut);
 
 	if(stream->data == NULL)
@@ -135,7 +135,7 @@ char* stream_rcv(tStream* stream, int* length) {
 	return message;
 }
 
-char* stream_rcv_nblock(tStream* stream, int* length) {
+char* stream_rcv_nblock(tStream* stream, unsigned int* length) {
 	pthread_mutex_lock(stream->mut);
 
 	if(stream->data == NULL) {

@@ -13,7 +13,7 @@
 
 lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, tStream* pcStream, int flags) {
 	int iFlags = 0;
-	int length;
+	unsigned int length;
 
 	if(flags & TXFLAGS_BCAST) {
 		iFlags |= FLAG_ACTIVE;

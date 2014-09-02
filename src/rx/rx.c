@@ -50,7 +50,7 @@ void* rxmain(void* stream) {
 	}
 
 	while(1) {
-		int len;
+		unsigned int len;
 
 		if(receive(replyaddr, sd, pcStream) == 1) {
 			printf("Error receiving traffic from network\n");

@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 
 void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
-	int len;
+	unsigned int len;
 	lHeartbeat* next = (lHeartbeat*)(stream_rcv_nblock(txStream, &len));
 
 	while(next != NULL) {
@@ -20,7 +20,7 @@ void getSentHeartbeats(lHeartbeat** sent, tStream* txStream) {
 
 int getReceivedMessages(tStream* rxStream, tStream* rpStream,
 		lHeartbeat** sent, lResponse** unmatched) {
-	int len;
+	unsigned int len;
 	message* m = (message*)(stream_rcv_nblock(rxStream, &len));
 
 	while(m != NULL) {

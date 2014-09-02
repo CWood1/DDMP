@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "dhcplease.h"
 
@@ -8,24 +11,12 @@
 #define SUBNET "255.0.0.0"
 	// Very temporary
 
-unsigned int addrStringToInt(char* address) {
-	char* safeAddr = malloc(strlen(address) + 1);
-	strcpy(safeAddr, address);
+int checkSubnet(const char* ipAddress, const char* desiredNetwork, const char* subnet) {
+	in_addr_t ip, net, mask;
 
-	unsigned int addr = atoi(strtok(safeAddr, ".")) << 24;
-	addr += atoi(strtok(NULL, ".")) << 16;
-	addr += atoi(strtok(NULL, ".")) << 8;
-	addr += atoi(strtok(NULL, "."));
-
-	return addr;
-}
-
-int checkSubnet(char* ipAddress, char* desiredNetwork, char* subnet) {
-	unsigned int ip, net, mask;
-
-	ip = addrStringToInt(ipAddress);
-	net = addrStringToInt(desiredNetwork);
-	mask = addrStringToInt(subnet);
+	ip = inet_addr(ipAddress);
+	net = inet_addr(desiredNetwork);
+	mask = inet_addr(subnet);
 
 	if((ip & mask) == net) {
 		return 1;
@@ -35,7 +26,7 @@ int checkSubnet(char* ipAddress, char* desiredNetwork, char* subnet) {
 }
 
 void initDhcpLease() {
-	unsigned int size = 0;
+	unsigned long size = 0;
 	char* buffer = NULL;
 	FILE* leasefile = fopen("/tmp/dhcp.leases", "r");
 	stringList* l = malloc(sizeof(stringList));
