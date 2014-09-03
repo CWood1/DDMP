@@ -23,8 +23,7 @@ void* rxmain(void* ctSock) {
 	struct sockaddr_in selfaddr, replyaddr;
 
 	int ct_sd = *((int*)ctSock);
-//	tStream* cmdStream = (tStream*)stream;
-	tStream* pcStream = getStreamFromSock(ct_sd); //tream(cmdStream);
+	tStream* pcStream = getStreamFromSock(ct_sd);
 
 	if(pcStream == NULL) {
 		printf("RX: Error setting up stream to PC\n");
@@ -80,7 +79,7 @@ void* rxmain(void* ctSock) {
 					close(ct_sd);
 					close(sd);
 					pthread_exit(NULL);
-				case 2:
+				case -1:
 					printf("RX encountered an error when processing commands.\n");
 					close(ct_sd);
 					close(sd);

@@ -1,5 +1,6 @@
 #include "transmit.h"
 #include "config.h"
+#include "commands.h"
 
 #include <dhcpext/tx.h>
 #include <dhcpext/pc.h>
@@ -16,22 +17,22 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <sys/select.h>
 
-void* txmain(void* stream) {
-	int sd;
-	unsigned int len;
+void* txmain(void* ctSock) {
+	int sd, ct_sd;
 	struct sockaddr_in bcastaddr, directaddr;
 	int flags = 0;
 	char* str_bcastaddr, *str_directaddr;
 
-	tStream* cmdStream = (tStream*) stream;
-
-	if(getConfig(cmdStream, &str_bcastaddr, &str_directaddr, &flags) == 1) {
+	ct_sd = *((int*)ctSock);
+	
+	if(getConfig(ct_sd, &str_bcastaddr, &str_directaddr, &flags) == 1) {
 		printf("TX:\tUnable to receive configuration.\n");
 		pthread_exit(NULL);
 	}
 
-	tStream* pcStream = getStreamFromStream(cmdStream);
+	tStream* pcStream = getStreamFromSock(ct_sd);
 
 	if(pcStream == NULL) {
 		printf("TX:\tUnable to receive stream to PC\n");
@@ -57,6 +58,46 @@ void* txmain(void* stream) {
 	free(str_directaddr);
 
 	while(1) {
+		fd_set set;
+		FD_ZERO(&set);
+
+		FD_SET(ct_sd, &set);
+
+		struct timeval timeout;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100000;
+			// Timeout after 100ms
+
+		if(select(ct_sd + 1, &set, NULL, NULL, &timeout) == -1) {
+			printf("Select error in TX\n");
+			close(sd);
+			close(ct_sd);
+			pthread_exit(NULL);
+		}
+
+		if(FD_ISSET(ct_sd, &set)) {
+			switch(handleCommands(ct_sd)) {
+				case 1:
+					printf("tx shutting down.\n");
+					close(sd);	
+					close(ct_sd);
+					pthread_exit(NULL);
+					break;
+				case 2:
+					flags |= TXFLAGS_BCAST;
+					break;
+				case 3:
+					flags &= ~TXFLAGS_BCAST;
+					break;
+				case -1:
+					printf("TX encountered an error while parsing commands.\n");
+					close(sd);
+					close(ct_sd);	
+					pthread_exit(NULL);
+					break;
+			}
+		}
+
 		switch(sendHeartbeats(flags, sd, bcastaddr, directaddr, pcStream)) {
 			case 1:
 				printf("Unable to send broadcast heartbeat.\n");
@@ -68,29 +109,6 @@ void* txmain(void* stream) {
 				close(sd);
 				pthread_exit(NULL);
 				break;
-		}
-
-		char* cmd = stream_rcv_nblock(cmdStream, &len);
-
-		if(cmd != NULL) {
-			char* t = strtok(cmd, " ");
-
-			if(strcmp(t, "shutdown") == 0) {
-				free(cmd);
-				printf("tx shutting down.\n");
-				close(sd);
-				pthread_exit(NULL);
-			} else if(strcmp(t, "bcastflag")) {
-				t = strtok(NULL, " ");
-
-				if(strcmp(t, "1") == 0) {
-					flags |= TXFLAGS_BCAST;
-				} else {
-					flags &= ~TXFLAGS_BCAST;
-				}
-			}
-
-			free(cmd);
 		}
 	}
 }

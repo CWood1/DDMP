@@ -11,11 +11,11 @@ int handleCommands(int sd) {
 	ssize_t rc;
 	char* cmd;
 
-	if(ioctl(sd, FIONREAD, &size) != 0) {	
+	if(ioctl(sd, FIONREAD, &size) != 0) {
 		return -1;
 	}
 
-	if(size == 0) {	
+	if(size == 0) {
 		return -1;
 	}
 
@@ -38,6 +38,19 @@ int handleCommands(int sd) {
 		return 1;
 	}
 
-	free(cmd);
+	if(strcmp(s, "setbcast") == 0) {
+		s = strtok(NULL, " ");
+
+		if(strcmp(s, "1") == 0) {
+			free(cmd);
+			return 2;
+		}
+
+		if(strcmp(s, "0") == 0) {
+			free(cmd);
+			return 3;
+		}
+	}
+
 	return 0;
 }

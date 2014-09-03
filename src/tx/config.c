@@ -4,19 +4,62 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/select.h>
 
-int getConfig(tStream* cmdStream, char** str_bcastaddr, char** str_directaddr,
+int getConfig(int sd, char** str_bcastaddr, char** str_directaddr,
 		int* flags) {
-	unsigned int len;
+	size_t size;
+	ssize_t rc;
+	fd_set set;
 
-	char* str_config = stream_rcv(cmdStream, &len);
-	int* pFlags = (int*)(stream_rcv(cmdStream, &len));
+	FD_ZERO(&set);
+	FD_SET(sd, &set);
 
-	if(str_config == NULL)
+	if(select(sd + 1, &set, NULL, NULL, NULL) == -1) {
 		return 1;
+	}
 
-	if(pFlags == NULL)
+	if(ioctl(sd, FIONREAD, &size) != 0) {
 		return 1;
+	}
+
+	char* str_config = malloc(size);
+
+	if(str_config == NULL) {
+		return 1;
+	}
+
+	rc = recv(sd, str_config, size, 0);
+
+	if(rc < 0) {
+		return 1;
+	}
+
+	FD_ZERO(&set);
+	FD_SET(sd, &set);
+
+	if(select(sd + 1, &set, NULL, NULL, NULL) == -1) {
+		return 1;
+	}
+
+	if(ioctl(sd, FIONREAD, &size) != 0) {
+		return 1;
+	}
+
+	int* pFlags = malloc(size);
+
+	if(pFlags == NULL) {
+		return 1;
+	}
+
+	rc = recv(sd, (char*)pFlags, size, 0);
+
+	if(rc < 0) {
+		return 1;
+	}
 
 	char* tstr_bcastaddr = strtok(str_config, " ");
 	char* tstr_directaddr = strtok(NULL, " ");

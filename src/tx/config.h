@@ -3,6 +3,6 @@
 
 #include <dhcpext/stream.h>
 
-int getConfig(tStream*, char**, char**, int*);
+int getConfig(int, char**, char**, int*);
 
 #endif
