@@ -11,6 +11,7 @@
 #define NETWORKFLAGS_BCAST 1
 
 tStream* getStreamFromStream(tStream*);
+tStream* getStreamFromSock(int);
 int setupSocket(int);
 int createAddr(uint32_t, struct sockaddr_in*);
 

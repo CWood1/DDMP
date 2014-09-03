@@ -1,4 +1,5 @@
 #include "receive.h"
+#include "commands.h"
 
 #include <dhcpext/rx.h>
 #include <dhcpext/pc.h>
@@ -15,13 +16,15 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <errno.h>
+#include <sys/select.h>
 
-void* rxmain(void* stream) {
+void* rxmain(void* ctSock) {
 	int sd;
 	struct sockaddr_in selfaddr, replyaddr;
 
-	tStream* cmdStream = (tStream*)stream;
-	tStream* pcStream = getStreamFromStream(cmdStream);
+	int ct_sd = *((int*)ctSock);
+//	tStream* cmdStream = (tStream*)stream;
+	tStream* pcStream = getStreamFromSock(ct_sd); //tream(cmdStream);
 
 	if(pcStream == NULL) {
 		printf("RX: Error setting up stream to PC\n");
@@ -50,26 +53,39 @@ void* rxmain(void* stream) {
 	}
 
 	while(1) {
-		unsigned int len;
+		fd_set set;
+		FD_ZERO(&set);
 
-		if(receive(replyaddr, sd, pcStream) == 1) {
-			printf("Error receiving traffic from network\n");
+		FD_SET(sd, &set);
+		FD_SET(ct_sd, &set);
+
+		if(select(((sd > ct_sd) ? sd : ct_sd) + 1, &set, NULL, NULL, NULL) == -1) {
+			printf("Select error in RX\n");
+			close(sd);
+			close(ct_sd);
 			pthread_exit(NULL);
 		}
 
-		char* cmd = stream_rcv_nblock(cmdStream, &len);
-
-		if(cmd != NULL) {
-			char* t = strtok(cmd, " ");
-
-			if(strcmp(t, "shutdown") == 0) {
-				free(cmd);
-				printf("rx shutting down.\n");
-				close(sd);
+		if(FD_ISSET(sd, &set)) {
+			if(receive(replyaddr, sd, pcStream) == 1) {
+				printf("Error receiving traffic from network\n");
 				pthread_exit(NULL);
 			}
+		}
 
-			free(cmd);
+		if(FD_ISSET(ct_sd, &set)) {
+			switch(handleCommands(ct_sd)) {
+				case 1:
+					printf("rx shutting down.\n");
+					close(ct_sd);
+					close(sd);
+					pthread_exit(NULL);
+				case 2:
+					printf("RX encountered an error when processing commands.\n");
+					close(ct_sd);
+					close(sd);
+					pthread_exit(NULL);
+			}
 		}
 	}
 }

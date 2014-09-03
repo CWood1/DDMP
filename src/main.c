@@ -10,15 +10,19 @@
 #include <pthread.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 tStream *s_tx, *s_rx, *s_pc, *s_rp;
+int rxSock;
 
 void sigintHandler(int);
 
 void sigintHandler(int signo) {
 	if(signo == SIGINT) {
 		stream_send(s_tx, "shutdown", strlen("shutdown") + 1);
-		stream_send(s_rx, "shutdown", strlen("shutdown") + 1);
+
+		send(rxSock, "shutdown", strlen("shutdown") + 1, 0);		
 	}
 }
 
@@ -38,12 +42,20 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	s_rx = malloc(sizeof(tStream));
+	int sv[2];
+	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sv) != 0) {
+		printf("Error in setting up socket pair to RX\n");
+		exit(EXIT_FAILURE);
+	}
+
+	rxSock = sv[0];
+
+/*	s_rx = malloc(sizeof(tStream));
 
 	if(s_rx == NULL) {
 		printf("malloc error in ct\n");
 		exit(EXIT_FAILURE);
-	}
+	}*/
 
 	s_pc = malloc(sizeof(tStream));
 
@@ -60,7 +72,7 @@ int main(int argc, char** argv) {
 	}
 
 	stream_init(s_tx);
-	stream_init(s_rx);
+	// stream_init(s_rx);
 	stream_init(s_pc);
 	stream_init(s_rp);
 
@@ -74,7 +86,7 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	if(pthread_create(&rx, NULL, rxmain, s_rx) != 0) {
+	if(pthread_create(&rx, NULL, rxmain, &sv[1]) != 0) {
 		fprintf(stderr, "Error: failed to start rx thread\n");
 		exit(EXIT_FAILURE);
 	}
@@ -133,7 +145,7 @@ int main(int argc, char** argv) {
 	stream_send(s_tx, (char*)(&s_tx_pc), sizeof(tStream*));
 	stream_send(s_pc, (char*)(&s_tx_pc), sizeof(tStream*));
 
-	stream_send(s_rx, (char*)(&s_rx_pc), sizeof(tStream*));
+	send(rxSock, (void*)(&s_rx_pc), sizeof(tStream*), 0);
 	stream_send(s_pc, (char*)(&s_rx_pc), sizeof(tStream*));
 
 	stream_send(s_rp, (char*)(&s_rp_pc), sizeof(tStream*));
@@ -157,7 +169,7 @@ int main(int argc, char** argv) {
 		// until all streams have been emptied
 	
 	stream_free(s_tx);
-	stream_free(s_rx);
+	// stream_free(s_rx);
 	stream_free(s_pc);
 	stream_free(s_rp);
 
@@ -166,7 +178,7 @@ int main(int argc, char** argv) {
 	stream_free(s_rp_pc);
 
 	free(s_tx);
-	free(s_rx);
+	// free(s_rx);
 	free(s_pc);
 	free(s_rp);
 
