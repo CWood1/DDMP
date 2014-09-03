@@ -1,6 +1,7 @@
 #include "heartbeat.h"
 #include "response.h"
 #include "api.h"
+#include "commands.h"
 
 #include <dhcpext/pc.h>
 #include <dhcpext/common.h>
@@ -12,29 +13,29 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <errno.h>
 
-void* pcmain(void* s) {
-	unsigned int len;
+void* pcmain(void* ctSock) {
+	int tx_sd, rx_sd, ct_sd;
 	char running = 1;
 
-	tStream* cmdStream = (tStream*) s;
-	tStream* txStream = getStreamFromStream(cmdStream);
-	tStream* rxStream = getStreamFromStream(cmdStream);
-	tStream* rpStream = getStreamFromStream(cmdStream);
+	ct_sd = *((int*)ctSock);
 
-	if(txStream == NULL) {
-		printf("PC:\tUnable to receive stream to TX\n");
+	if((tx_sd = getSockFromSock(ct_sd)) < 0) {
+		printf("PC:\tUnable to receive socket to TX\n");
 		pthread_exit(NULL);
 	}
 
-	if(rxStream == NULL) {
-		printf("PC:\tUnable to receive stream to RX\n");
+	if((rx_sd = getSockFromSock(ct_sd)) < 0) {
+		printf("PC:\nUnable to receive socket to RX\n");
 		pthread_exit(NULL);
 	}
+
+	tStream* rpStream = getStreamFromSock(ct_sd);
 
 	if(rpStream == NULL) {
 		printf("PC:\tUnable to receive stream to RP\n");
@@ -45,23 +46,54 @@ void* pcmain(void* s) {
 	lResponse* unmatched = NULL;
 
 	while(running) {
-		char* cmd = stream_rcv_nblock(cmdStream, &len);
+		fd_set set;
+		FD_ZERO(&set);
 
-		if(cmd != NULL) {
-			char* t = strtok(cmd, " ");
+		FD_SET(tx_sd, &set);
+		FD_SET(rx_sd, &set);
+		FD_SET(ct_sd, &set);
 
-			if(strcmp(t, "shutdown") == 0) {
-				running = 0;
-			}
+		int largest = tx_sd;
+		largest = (largest < rx_sd) ? rx_sd : largest;
+		largest = (largest < ct_sd) ? ct_sd : largest;
 
-			free(cmd);
-		}
-
-		getSentHeartbeats(&sent, txStream);
-		if(getReceivedMessages(rxStream, rpStream, &sent, &unmatched) == -1) {
-			printf("malloc error in PC\n");
+		if(select(largest + 1, &set, NULL, NULL, NULL) == -1) {
+			printf("Select error in PC\n");
+			close(tx_sd);
+			close(rx_sd);
+			close(ct_sd);
 			pthread_exit(NULL);
 		}
+
+		if(FD_ISSET(ct_sd, &set)) {
+			switch(handleCommands(ct_sd)) {
+				case 1:
+					running = 0;
+					break;
+				case -1:
+					printf("PC encountered an error when processing commands.\n");
+					close(tx_sd);
+					close(rx_sd);
+					close(ct_sd);
+					pthread_exit(NULL);
+					break;
+			}
+		}
+
+		if(FD_ISSET(tx_sd, &set)) {
+			getSentHeartbeats(&sent, tx_sd);
+		}
+
+		if(FD_ISSET(rx_sd, &set)) {
+			if(getReceivedMessages(rx_sd, rpStream, &sent, &unmatched) == -1) {
+				printf("malloc error in PC\n");
+				close(tx_sd);
+				close(rx_sd);
+				close(ct_sd);
+				pthread_exit(NULL);
+			}
+		}
+
 		checkUnmatchedList(&unmatched, &sent);
 		removeTimedoutHeartbeats(&sent);
 
@@ -71,5 +103,8 @@ void* pcmain(void* s) {
 	freeResponseList(unmatched);
 
 	printf("pc shutting down.\n");
+	close(tx_sd);
+	close(rx_sd);
+	close(ct_sd);
 	pthread_exit(NULL);
 }

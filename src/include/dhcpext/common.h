@@ -12,6 +12,7 @@
 
 tStream* getStreamFromStream(tStream*);
 tStream* getStreamFromSock(int);
+int getSockFromSock(int);
 int setupSocket(int);
 int createAddr(uint32_t, struct sockaddr_in*);
 

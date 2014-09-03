@@ -6,7 +6,7 @@
 
 #include <netinet/in.h>
 
-lHeartbeat* sendHeartbeat(int, struct sockaddr_in, tStream*, int);
-int sendHeartbeats(int, int, struct sockaddr_in, struct sockaddr_in, tStream*);
+lHeartbeat* sendHeartbeat(int, struct sockaddr_in, int, int);
+int sendHeartbeats(int, int, struct sockaddr_in, struct sockaddr_in, int);
 
 #endif

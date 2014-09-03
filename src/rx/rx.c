@@ -19,14 +19,13 @@
 #include <sys/select.h>
 
 void* rxmain(void* ctSock) {
-	int sd;
+	int sd, ct_sd, pc_sd;
 	struct sockaddr_in selfaddr, replyaddr;
 
-	int ct_sd = *((int*)ctSock);
-	tStream* pcStream = getStreamFromSock(ct_sd);
+	ct_sd = *((int*)ctSock);
 
-	if(pcStream == NULL) {
-		printf("RX: Error setting up stream to PC\n");
+	if((pc_sd = getSockFromSock(ct_sd)) < 0) {
+		printf("RX: Error setting up socket to PC\n");
 		pthread_exit(NULL);
 	}
 
@@ -48,6 +47,8 @@ void* rxmain(void* ctSock) {
 	if(bind(sd, (struct sockaddr*)&selfaddr, sizeof(selfaddr)) < 0) {
 		perror("Heartbeat receive - bind error.");
 		close(sd);
+		close(ct_sd);
+		close(pc_sd);
 		pthread_exit(NULL);
 	}
 
@@ -62,11 +63,12 @@ void* rxmain(void* ctSock) {
 			printf("Select error in RX\n");
 			close(sd);
 			close(ct_sd);
+			close(pc_sd);
 			pthread_exit(NULL);
 		}
 
 		if(FD_ISSET(sd, &set)) {
-			if(receive(replyaddr, sd, pcStream) == 1) {
+			if(receive(replyaddr, sd, pc_sd) == 1) {
 				printf("Error receiving traffic from network\n");
 				pthread_exit(NULL);
 			}
@@ -78,11 +80,13 @@ void* rxmain(void* ctSock) {
 					printf("rx shutting down.\n");
 					close(ct_sd);
 					close(sd);
+					close(pc_sd);
 					pthread_exit(NULL);
 				case -1:
 					printf("RX encountered an error when processing commands.\n");
 					close(ct_sd);
 					close(sd);
+					close(pc_sd);
 					pthread_exit(NULL);
 			}
 		}

@@ -5,6 +5,6 @@
 
 #include <netinet/in.h>
 
-int receive(struct sockaddr_in, int, tStream*);
+int receive(struct sockaddr_in, int, int);
 
 #endif

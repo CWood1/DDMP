@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
-lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, tStream* pcStream, int flags) {
+lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, int pc_sd, int flags) {
 	int iFlags = 0;
 	unsigned int length;
 
@@ -42,12 +42,12 @@ lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, tStream* pcStream, in
 	s->addrv4  = addr.sin_addr.s_addr;
 	gettimeofday(&(s->timeSent), NULL);
 
-	stream_send(pcStream, (char*)s, sizeof(lHeartbeat));
+	send(pc_sd, (char*)s, sizeof(lHeartbeat), 0);
 	return s;
 }
 
 int sendHeartbeats(int flags, int sd, struct sockaddr_in bcastaddr,
-		struct sockaddr_in directaddr, tStream* pcStream) {
+		struct sockaddr_in directaddr, int pc_sd) {
 	static struct timeval last = {0, 0};
 
 	struct timeval now;
@@ -58,7 +58,7 @@ int sendHeartbeats(int flags, int sd, struct sockaddr_in bcastaddr,
 		lHeartbeat* sent;
 
 		if(flags & TXFLAGS_BCAST) {
-			sent = sendHeartbeat(sd, bcastaddr, pcStream, flags);
+			sent = sendHeartbeat(sd, bcastaddr, pc_sd, flags);
 
 			if(sent == NULL) {
 				return 1;
@@ -67,7 +67,7 @@ int sendHeartbeats(int flags, int sd, struct sockaddr_in bcastaddr,
 			free(sent);
 		}
 
-		sent = sendHeartbeat(sd, directaddr, pcStream, flags & ~TXFLAGS_BCAST);
+		sent = sendHeartbeat(sd, directaddr, pc_sd, flags & ~TXFLAGS_BCAST);
 
 		if(sent == NULL) {
 			return 2;

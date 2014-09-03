@@ -12,7 +12,7 @@
 #include <sys/ioctl.h>
 #include <netinet/udp.h>
 
-int receive(struct sockaddr_in replyaddr, int sd, tStream* pcStream) {
+int receive(struct sockaddr_in replyaddr, int sd, int pc_sd) {
 	size_t size;
 
 	if(ioctl(sd, FIONREAD, &size) != 0) {
@@ -48,7 +48,7 @@ int receive(struct sockaddr_in replyaddr, int sd, tStream* pcStream) {
 		m->addrv4 = replyaddr.sin_addr.s_addr;
 		m->bufferSize = size;
 
-		stream_send(pcStream, (char*)m, sizeof(message));
+		send(pc_sd, (char*)m, sizeof(message), 0);
 		free(m);
 	}
 

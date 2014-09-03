@@ -20,7 +20,7 @@
 #include <sys/select.h>
 
 void* txmain(void* ctSock) {
-	int sd, ct_sd;
+	int sd, ct_sd, pc_sd;
 	struct sockaddr_in bcastaddr, directaddr;
 	int flags = 0;
 	char* str_bcastaddr, *str_directaddr;
@@ -32,10 +32,8 @@ void* txmain(void* ctSock) {
 		pthread_exit(NULL);
 	}
 
-	tStream* pcStream = getStreamFromSock(ct_sd);
-
-	if(pcStream == NULL) {
-		printf("TX:\tUnable to receive stream to PC\n");
+	if((pc_sd = getSockFromSock(ct_sd)) == -1) {
+		printf("TX:\tUnable to receive socket to PC.\n");
 		pthread_exit(NULL);
 	}
 
@@ -72,6 +70,7 @@ void* txmain(void* ctSock) {
 			printf("Select error in TX\n");
 			close(sd);
 			close(ct_sd);
+			close(pc_sd);
 			pthread_exit(NULL);
 		}
 
@@ -81,6 +80,7 @@ void* txmain(void* ctSock) {
 					printf("tx shutting down.\n");
 					close(sd);	
 					close(ct_sd);
+					close(pc_sd);
 					pthread_exit(NULL);
 					break;
 				case 2:
@@ -92,21 +92,26 @@ void* txmain(void* ctSock) {
 				case -1:
 					printf("TX encountered an error while parsing commands.\n");
 					close(sd);
-					close(ct_sd);	
+					close(ct_sd);
+					close(pc_sd);
 					pthread_exit(NULL);
 					break;
 			}
 		}
 
-		switch(sendHeartbeats(flags, sd, bcastaddr, directaddr, pcStream)) {
+		switch(sendHeartbeats(flags, sd, bcastaddr, directaddr, pc_sd)) {
 			case 1:
 				printf("Unable to send broadcast heartbeat.\n");
 				close(sd);
+				close(ct_sd);
+				close(pc_sd);
 				pthread_exit(NULL);
 				break;
 			case 2:
 				printf("Unable to send direct heartbeat.\n");
 				close(sd);
+				close(ct_sd);
+				close(pc_sd);
 				pthread_exit(NULL);
 				break;
 		}
