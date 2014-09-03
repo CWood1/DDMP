@@ -37,7 +37,7 @@ int getSentHeartbeats(lHeartbeat** sent, int tx_sd) {
 	return 0;
 }
 
-int getReceivedMessages(int rx_sd, tStream* rpStream,
+int getReceivedMessages(int rx_sd, int rp_sd,
 		lHeartbeat** sent, lResponse** unmatched) {
 	size_t size;
 	message* m;
@@ -65,7 +65,7 @@ int getReceivedMessages(int rx_sd, tStream* rpStream,
 
 	if(isHeartbeat(m->buffer, m->bufferSize)) {
 		heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
-		handleReceivedHeartbeat(h, addrv4, rpStream);
+		handleReceivedHeartbeat(h, addrv4, rp_sd);
 		freeHeartbeat(h);
 	} else {
 		response* r = deserializeResponse(m->buffer, m->bufferSize);

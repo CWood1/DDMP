@@ -7,6 +7,6 @@
 #include <dhcpext/stream.h>
 
 int getSentHeartbeats(lHeartbeat**, int);
-int getReceivedMessages(int, tStream*, lHeartbeat**, lResponse**);
+int getReceivedMessages(int, int, lHeartbeat**, lResponse**);
 
 #endif

@@ -65,10 +65,10 @@ void handleSentHeartbeat(lHeartbeat** sent, lHeartbeat* next) {
 	printHeartbeat(next->h);
 }
 
-void handleReceivedHeartbeat(heartbeat* h, struct in_addr addrv4, tStream* rpStream) {
+void handleReceivedHeartbeat(heartbeat* h, struct in_addr addrv4, int rp_sd) {
 	printf("Heartbeat received(%s):\n", inet_ntoa(addrv4));
 	printHeartbeat(h);
-	stream_send(rpStream, (char*)h, sizeof(heartbeat));
+	send(rp_sd, h, sizeof(heartbeat), 0);
 }
 
 int checkMatchedHeartbeat(lHeartbeat** sent, response* r) {

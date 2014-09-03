@@ -1,3 +1,6 @@
+#include "heartbeat.h"
+#include "commands.h"
+
 #include <dhcpext/rp.h>
 #include <dhcpext/common.h>
 #include <dhcpext/proto.h>
@@ -9,20 +12,20 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <errno.h>
 
-void* rpmain(void* s) {
-	int sd;
+void* rpmain(void* ctSock) {
+	int sd, ct_sd, pc_sd;
 	struct sockaddr_in replyaddr;
 
-	tStream* cmdStream = (tStream*) s;
-	tStream* pcStream = getStreamFromStream(cmdStream);
+	ct_sd = *((int*)ctSock);
 
-	if(pcStream == NULL) {
-		printf("RP: Unable to receive stream to PC\n");
+	if((pc_sd = getSockFromSock(ct_sd)) < 0) {
+		printf("RP: Unable to receive socket to PC.\n");
 		pthread_exit(NULL);
 	}
 
@@ -37,26 +40,53 @@ void* rpmain(void* s) {
 	}
 
 	while(1) {
-		unsigned int len;
-		char* cmd = stream_rcv_nblock(cmdStream, &len);
+		fd_set set;
+		FD_ZERO(&set);
 
-		while(cmd != NULL) {
-			char* t = strtok(cmd, " ");
+		FD_SET(ct_sd, &set);
+		FD_SET(pc_sd, &set);
 
-			if(strcmp(t, "shutdown") == 0) {
-				printf("rp shutting down\n");
-				free(cmd);
+		if(select(((ct_sd > pc_sd) ? ct_sd : pc_sd) + 1, &set, NULL, NULL, NULL) == -1) {
+			printf("Select error in RP\n");
+			close(sd);
+			close(ct_sd);
+			close(pc_sd);
+			pthread_exit(NULL);
+		}
+
+		if(FD_ISSET(ct_sd, &set)) {
+			switch(handleCommands(ct_sd)) {
+				case 1:
+					printf("rp shutting down.\n");
+					close(sd);
+					close(ct_sd);
+					close(pc_sd);
+					pthread_exit(NULL);
+					break;
+				case -1:
+					printf("RP:\tError while processing commands.\n");
+					close(sd);
+					close(ct_sd);
+					close(pc_sd);
+					pthread_exit(NULL);
+					break;
+			}
+		}
+
+		if(FD_ISSET(pc_sd, &set)) {
+			heartbeat* h;
+			unsigned int len;
+
+			h = getHeartbeatFromSock(pc_sd);
+
+			if(h == NULL) {
+				printf("RP:\tError while fetching heartbeat from PC\n");
 				close(sd);
+				close(pc_sd);
+				close(ct_sd);
 				pthread_exit(NULL);
 			}
 
-			free(cmd);
-			cmd = stream_rcv_nblock(cmdStream, &len);
-		}
-
-		heartbeat* h = (heartbeat*)(stream_rcv_nblock(pcStream, &len));
-
-		if(h != NULL) {
 			response* r = craftResponse(h);
 			char* b = serializeResponse(r, &len);
 
@@ -70,6 +100,8 @@ void* rpmain(void* s) {
 			if(rc < 0) {
 				perror("sendto error");
 				close(sd);
+				close(pc_sd);
+				close(ct_sd);
 				pthread_exit(NULL);
 			}
 		}

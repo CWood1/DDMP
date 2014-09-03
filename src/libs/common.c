@@ -78,10 +78,11 @@ int getSockFromSock(int sd) {
 	}
 
 	if(size != sizeof(int)) {
+		printf("%d\n", size);
 		return -1;
 	}
 
-	if(recv(sd, (char*)(&ret), size, 0) < 0) {
+	if(recv(sd, &ret, size, 0) < 0) {
 		return -1;
 	}
 

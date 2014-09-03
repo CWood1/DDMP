@@ -20,25 +20,23 @@
 #include <errno.h>
 
 void* pcmain(void* ctSock) {
-	int tx_sd, rx_sd, ct_sd;
+	int tx_sd, rx_sd, rp_sd, ct_sd;
 	char running = 1;
 
 	ct_sd = *((int*)ctSock);
 
-	if((tx_sd = getSockFromSock(ct_sd)) < 0) {
-		printf("PC:\tUnable to receive socket to TX\n");
+	if((tx_sd = getSockFromSock(ct_sd)) == -1) {
+		perror("PC");
 		pthread_exit(NULL);
 	}
 
-	if((rx_sd = getSockFromSock(ct_sd)) < 0) {
+	if((rx_sd = getSockFromSock(ct_sd)) == -1) {
 		printf("PC:\nUnable to receive socket to RX\n");
 		pthread_exit(NULL);
 	}
 
-	tStream* rpStream = getStreamFromSock(ct_sd);
-
-	if(rpStream == NULL) {
-		printf("PC:\tUnable to receive stream to RP\n");
+	if((rp_sd = getSockFromSock(ct_sd)) == -1) {
+		printf("PC:\nUnable to receive socket to RP\n");
 		pthread_exit(NULL);
 	}
 
@@ -85,7 +83,7 @@ void* pcmain(void* ctSock) {
 		}
 
 		if(FD_ISSET(rx_sd, &set)) {
-			if(getReceivedMessages(rx_sd, rpStream, &sent, &unmatched) == -1) {
+			if(getReceivedMessages(rx_sd, rp_sd, &sent, &unmatched) == -1) {
 				printf("malloc error in PC\n");
 				close(tx_sd);
 				close(rx_sd);
@@ -105,6 +103,7 @@ void* pcmain(void* ctSock) {
 	printf("pc shutting down.\n");
 	close(tx_sd);
 	close(rx_sd);
+	close(rp_sd);
 	close(ct_sd);
 	pthread_exit(NULL);
 }

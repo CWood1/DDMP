@@ -13,8 +13,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-tStream *s_pc, *s_rp;
-int txSock[2], rxSock[2], pcSock[2];
+int txSock[2], rxSock[2], pcSock[2], rpSock[2];
 
 void sigintHandler(int);
 
@@ -49,21 +48,10 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-/*	s_pc = malloc(sizeof(tStream));
-
-	if(s_pc == NULL) {
-		printf("malloc error in ct\n");
-		exit(EXIT_FAILURE);
-	}*/
-
-	s_rp = malloc(sizeof(tStream));
-
-	if(s_rp == NULL) {
-		printf("malloc error in ct\n");
+	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, rpSock) != 0) {
+		printf("Error in setting up socket pair to RP\n");
 		exit(EXIT_FAILURE);
 	}
-
-	stream_init(s_rp);
 
 	if(signal(SIGINT, sigintHandler) == SIG_ERR) {
 		fprintf(stderr, "Unable to catch SIGINT.\n");
@@ -85,7 +73,7 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	if(pthread_create(&rp, NULL, rpmain, s_rp) != 0) {
+	if(pthread_create(&rp, NULL, rpmain, &rpSock[1]) != 0) {
 		fprintf(stderr, "Error: failed to start rp thread\n");
 		exit(EXIT_FAILURE);
 	}
@@ -106,32 +94,7 @@ int main(int argc, char** argv) {
 	
 	send(txSock[0], (char*)(&flags), sizeof(int), 0);
 
-	/*tStream* s_tx_pc = malloc(sizeof(tStream));
-
-	if(s_tx_pc == NULL) {
-		printf("malloc error in ct\n");
-		exit(EXIT_FAILURE);
-	}
-
-	tStream* s_rx_pc = malloc(sizeof(tStream));
-
-	if(s_rx_pc == NULL) {
-		printf("malloc error in ct\n");
-		exit(EXIT_FAILURE);
-	}*/
-
-	tStream* s_rp_pc = malloc(sizeof(tStream));
-
-	if(s_rp_pc == NULL) {
-		printf("malloc error in ct\n");
-		exit(EXIT_FAILURE);
-	}
-
-//	stream_init(s_tx_pc);
-//	stream_init(s_rx_pc);
-	stream_init(s_rp_pc);
-
-	int tx_pc_sd[2], rx_pc_sd[2];
+	int tx_pc_sd[2], rx_pc_sd[2], rp_pc_sd[2];
 
 	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, tx_pc_sd) != 0) {
 		printf("Error in setting up socket pair between TX and PC\n");
@@ -143,14 +106,23 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	send(txSock[0], (char*)(&tx_pc_sd[0]), sizeof(tStream*), 0);
-	send(pcSock[0], (char*)(&tx_pc_sd[1]), sizeof(tStream*), 0);
+	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, rp_pc_sd) != 0) {
+		printf("Error in setting up socket pair between RP and PC\n");
+		exit(EXIT_FAILURE);
+	}
 
-	send(rxSock[0], (void*)(&rx_pc_sd[0]), sizeof(tStream*), 0);
-	send(pcSock[0], (char*)(&rx_pc_sd[1]), sizeof(tStream*), 0);
+	send(txSock[0], &tx_pc_sd[0], sizeof(int), 0);
+	send(pcSock[0], &tx_pc_sd[1], sizeof(int), 0);
 
-	stream_send(s_rp, (char*)(&s_rp_pc), sizeof(tStream*));
-	send(pcSock[0], (char*)(&s_rp_pc), sizeof(tStream*), 0);
+	usleep(100);
+
+	send(rxSock[0], &rx_pc_sd[0], sizeof(int), 0);
+	send(pcSock[0], &rx_pc_sd[1], sizeof(int), 0);
+
+	usleep(100);
+
+	send(rpSock[0], &rp_pc_sd[0], sizeof(int), 0);
+	send(pcSock[0], &rp_pc_sd[1], sizeof(int), 0);
 
 	pthread_join(tx, NULL);
 	pthread_join(rx, NULL);
@@ -164,20 +136,15 @@ int main(int argc, char** argv) {
 	pthread_join(pc, NULL);
 		// Wait for PC to finish as well
 
-	stream_send(s_rp, "shutdown", strlen("shutdown") + 1);
+	send(rpSock[0], "shutdown", strlen("shutdown") + 1, 0);
 	pthread_join(rp, NULL);
 		// End RP after PC, as it will continue to send traffic through
 		// until all streams have been emptied
 	
-	stream_free(s_rp);
-	stream_free(s_rp_pc);
-
-	free(s_rp);
-	free(s_rp_pc);
-
 	close(txSock[0]);
 	close(rxSock[0]);
 	close(pcSock[0]);
+	close(rpSock[0]);
 
 	return 0;
 }

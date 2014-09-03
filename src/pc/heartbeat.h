@@ -10,7 +10,7 @@
 void removeHeartbeatFromList(lHeartbeat**, lHeartbeat*);
 void freeHeartbeatList(lHeartbeat*);
 void handleSentHeartbeat(lHeartbeat**, lHeartbeat*);
-void handleReceivedHeartbeat(heartbeat*, struct in_addr, tStream*);
+void handleReceivedHeartbeat(heartbeat*, struct in_addr, int);
 int checkMatchedHeartbeat(lHeartbeat**, response*);
 void removeTimedoutHeartbeats(lHeartbeat**);
 
