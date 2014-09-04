@@ -60,6 +60,7 @@ heartbeat* deserializeHeartbeat(char* s, unsigned int length) {
 	}
 
 	heartbeat* h = malloc(sizeof(heartbeat));
+	memset(h, 0, sizeof(heartbeat));
 
 	if(h == NULL) {
 		printf("malloc error in proto\n");

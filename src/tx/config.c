@@ -1,7 +1,5 @@
 #include "config.h"
 
-#include <dhcpext/stream.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -12,7 +10,6 @@
 int getConfig(int sd, char** str_bcastaddr, char** str_directaddr,
 		int* flags) {
 	size_t size;
-	ssize_t rc;
 	fd_set set;
 
 	FD_ZERO(&set);
@@ -32,9 +29,7 @@ int getConfig(int sd, char** str_bcastaddr, char** str_directaddr,
 		return 1;
 	}
 
-	rc = recv(sd, str_config, size, 0);
-
-	if(rc < 0) {
+	if(recv(sd, str_config, size, 0) < 0) {
 		return 1;
 	}
 
@@ -55,9 +50,7 @@ int getConfig(int sd, char** str_bcastaddr, char** str_directaddr,
 		return 1;
 	}
 
-	rc = recv(sd, (char*)pFlags, size, 0);
-
-	if(rc < 0) {
+	if(recv(sd, (char*)pFlags, size, 0) < 0) { 
 		return 1;
 	}
 

@@ -2,7 +2,6 @@
 
 #include <dhcpext/pc.h>
 #include <dhcpext/proto.h>
-#include <dhcpext/stream.h>
 
 #include <netinet/in.h>
 #include <sys/time.h>

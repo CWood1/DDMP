@@ -2,7 +2,6 @@
 #include <dhcpext/rx.h>
 #include <dhcpext/pc.h>
 #include <dhcpext/rp.h>
-#include <dhcpext/stream.h>
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -3,7 +3,6 @@
 #include <dhcpext/tx.h>
 #include <dhcpext/pc.h>
 #include <dhcpext/proto.h>
-#include <dhcpext/stream.h>
 
 #include <stdlib.h>
 #include <netinet/in.h>
