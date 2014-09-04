@@ -78,7 +78,6 @@ int getSockFromSock(int sd) {
 	}
 
 	if(size != sizeof(int)) {
-		printf("%d\n", size);
 		return -1;
 	}
 

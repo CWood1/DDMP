@@ -33,22 +33,22 @@ int main(int argc, char** argv) {
 
 	pthread_t tx, rx, pc, rp;
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, txSock) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, txSock) != 0) {
 		printf("Error in setting up socket pair to TX\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, rxSock) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, rxSock) != 0) {
 		printf("Error in setting up socket pair to RX\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, pcSock) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, pcSock) != 0) {
 		printf("Error in setting up socket pair to PC\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, rpSock) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, rpSock) != 0) {
 		printf("Error in setting up socket pair to RP\n");
 		exit(EXIT_FAILURE);
 	}
@@ -96,17 +96,17 @@ int main(int argc, char** argv) {
 
 	int tx_pc_sd[2], rx_pc_sd[2], rp_pc_sd[2];
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, tx_pc_sd) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, tx_pc_sd) != 0) {
 		printf("Error in setting up socket pair between TX and PC\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, rx_pc_sd) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, rx_pc_sd) != 0) {
 		printf("Error in setting up socket pair between RX and PC\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if(socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, rp_pc_sd) != 0) {
+	if(socketpair(AF_LOCAL, SOCK_DGRAM, 0, rp_pc_sd) != 0) {
 		printf("Error in setting up socket pair between RP and PC\n");
 		exit(EXIT_FAILURE);
 	}
@@ -114,12 +114,8 @@ int main(int argc, char** argv) {
 	send(txSock[0], &tx_pc_sd[0], sizeof(int), 0);
 	send(pcSock[0], &tx_pc_sd[1], sizeof(int), 0);
 
-	usleep(100);
-
 	send(rxSock[0], &rx_pc_sd[0], sizeof(int), 0);
 	send(pcSock[0], &rx_pc_sd[1], sizeof(int), 0);
-
-	usleep(100);
 
 	send(rpSock[0], &rp_pc_sd[0], sizeof(int), 0);
 	send(pcSock[0], &rp_pc_sd[1], sizeof(int), 0);
