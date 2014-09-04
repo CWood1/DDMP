@@ -48,34 +48,25 @@ lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, int pc_sd, int flags)
 
 int sendHeartbeats(int flags, int sd, struct sockaddr_in bcastaddr,
 		struct sockaddr_in directaddr, int pc_sd) {
-	static struct timeval last = {0, 0};
+	lHeartbeat* sent;
 
-	struct timeval now;
-	gettimeofday(&now, NULL);
-
-	if(last.tv_sec == 0 ||
-			last.tv_sec < now.tv_sec || (now.tv_usec - last.tv_usec) >= 100000) {
-		lHeartbeat* sent;
-
-		if(flags & TXFLAGS_BCAST) {
-			sent = sendHeartbeat(sd, bcastaddr, pc_sd, flags);
-
-			if(sent == NULL) {
-				return 1;
-			}
-
-			free(sent);
-		}
-
-		sent = sendHeartbeat(sd, directaddr, pc_sd, flags & ~TXFLAGS_BCAST);
+	if(flags & TXFLAGS_BCAST) {
+		sent = sendHeartbeat(sd, bcastaddr, pc_sd, flags);
 
 		if(sent == NULL) {
-			return 2;
+			return 1;
 		}
 
-		last = sent->timeSent;
 		free(sent);
 	}
+
+	sent = sendHeartbeat(sd, directaddr, pc_sd, flags & ~TXFLAGS_BCAST);
+
+	if(sent == NULL) {
+		return 2;
+	}
+
+	free(sent);
 
 	return 0;
 }
