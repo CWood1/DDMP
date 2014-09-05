@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <errno.h>
 
 int getSockFromSock(int sd) {
 	size_t size;
@@ -23,6 +24,7 @@ int getSockFromSock(int sd) {
 	}
 
 	if(size != sizeof(int)) {
+		errno = ENOMSG;
 		return -1;
 	}
 

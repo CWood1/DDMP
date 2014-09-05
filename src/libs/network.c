@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
 
 int setupSocket(int flags) {
 	int sd;
@@ -27,6 +28,11 @@ int setupSocket(int flags) {
 }
 
 int createAddr(uint32_t addr, struct sockaddr_in* saddr) {
+	if(saddr == NULL) {
+		errno = EINVAL;
+		return 1;
+	}
+
 	memset(saddr, 0, sizeof(struct sockaddr_in));
 	saddr->sin_family = AF_INET;
 	saddr->sin_port = htons(PORT);
