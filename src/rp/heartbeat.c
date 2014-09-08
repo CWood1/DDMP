@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 heartbeat* getHeartbeatFromSock(int sd) {
 	size_t size;
@@ -16,6 +17,7 @@ heartbeat* getHeartbeatFromSock(int sd) {
 	}
 
 	if(size == 0) {
+		errno = ENOMSG;
 		return NULL;
 	}
 

@@ -33,7 +33,7 @@ void* rpmain(void* ctSock) {
 		pthread_exit(NULL);
 	}
 
-	if(createAddr(htonl(INADDR_ANY), &replyaddr) == 1) {
+	if(createAddr(htonl(INADDR_ANY), &replyaddr) == -1) {
 		printf("RP: Unable to set up reply address\n");
 		pthread_exit(NULL);
 	}
@@ -87,7 +87,24 @@ void* rpmain(void* ctSock) {
 			}
 
 			response* r = craftResponse(h);
+
+			if(r == NULL) {
+				printf("RP:\tError while crafting response\n");
+				close(sd);
+				close(pc_sd);
+				close(ct_sd);
+				pthread_exit(NULL);
+			}
+
 			char* b = serializeResponse(r, &len);
+
+			if(b == NULL) {
+				printf("RP:\nError serializing response\n");
+				close(sd);
+				close(pc_sd);
+				close(ct_sd);
+				pthread_exit(NULL);
+			}
 
 			int rc = sendto(sd, b, len, 0,
 				(struct sockaddr*)&replyaddr, sizeof(replyaddr));
