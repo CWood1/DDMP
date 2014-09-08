@@ -26,7 +26,7 @@ void* txmain(void* ctSock) {
 
 	ct_sd = *((int*)ctSock);
 	
-	if(getConfig(ct_sd, &str_bcastaddr, &str_directaddr, &flags) == 1) {
+	if(getConfig(ct_sd, &str_bcastaddr, &str_directaddr, &flags) == -1) {
 		printf("TX:\tUnable to receive configuration.\n");
 		pthread_exit(NULL);
 	}

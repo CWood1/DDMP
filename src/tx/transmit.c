@@ -13,25 +13,30 @@
 lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, int pc_sd, int flags) {
 	int iFlags = 0;
 	unsigned int length;
+	heartbeat* h;
+	lHeartbeat* s;
+	char* buffer;
 
 	if(flags & TXFLAGS_BCAST) {
 		iFlags |= FLAG_ACTIVE;
 	}
 
-	heartbeat* h = craftHeartbeat(iFlags);
-	char* buffer = serializeHeartbeat(h, &length);
-
-	int rc = sendto(sd, buffer, length, 0,
-		(struct sockaddr*)&addr, sizeof(addr));
-	free(buffer);
-
-	if(rc < 0) {
+	if((h = craftHeartbeat(iFlags)) == NULL) {
 		return NULL;
 	}
 
-	lHeartbeat* s = malloc(sizeof(lHeartbeat));
+	if((buffer = serializeHeartbeat(h, &length)) == NULL) {
+		return NULL;
+	}
 
-	if(s == NULL) {
+	if(sendto(sd, buffer, length, 0,
+			(struct sockaddr*)&addr, sizeof(addr)) < 0) {
+		return NULL;
+	}
+
+	free(buffer);
+
+	if((s = malloc(sizeof(lHeartbeat))) == NULL) {
 		return NULL;
 	}
 
@@ -39,9 +44,15 @@ lHeartbeat* sendHeartbeat(int sd, struct sockaddr_in addr, int pc_sd, int flags)
 	s->prev = NULL;
 	s->h = h;
 	s->addrv4  = addr.sin_addr.s_addr;
-	gettimeofday(&(s->timeSent), NULL);
 
-	send(pc_sd, (char*)s, sizeof(lHeartbeat), 0);
+	if(gettimeofday(&(s->timeSent), NULL) == -1) {
+		return NULL;
+	}
+
+	if(send(pc_sd, (char*)s, sizeof(lHeartbeat), 0) == -1) {
+		return NULL;
+	}
+
 	return s;
 }
 

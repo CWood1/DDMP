@@ -47,12 +47,10 @@ char* serializeHeartbeat(heartbeat* h, unsigned int* length) {
 	char* s = malloc(9);
 
 	if(s == NULL) {
-		printf("malloc error in proto\n");
-		pthread_exit(NULL);
+		return NULL;
 	}
 
 	memset(s, 0, 9);
-
 	memcpy(s, &(h->ident), sizeof(h->ident));
 	memcpy(s + 1, &(h->flags), sizeof(h->flags));
 	memcpy(s + 5, &(h->magic), sizeof(h->magic));
@@ -69,8 +67,7 @@ heartbeat* deserializeHeartbeat(char* s, unsigned int length) {
 	heartbeat* h = malloc(sizeof(heartbeat));
 
 	if(h == NULL) {
-		printf("malloc error in proto\n");
-		pthread_exit(NULL);
+		return NULL;
 	}
 
 	memset(h, 0, sizeof(heartbeat));
