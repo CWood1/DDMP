@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <errno.h>
 
 response* craftResponse(heartbeat* h) {
 	response* r = malloc(sizeof(response));
 
 	if(r == NULL) {
-		printf("malloc error in proto\n");
-		pthread_exit(NULL);
+		return NULL;
 	}
 
 	r->ident = 1;
@@ -24,8 +24,7 @@ char* serializeResponse(response* r, unsigned int* length) {
 	char* s = malloc(9);
 
 	if(s == NULL) {
-		printf("malloc error in proto\n");
-		pthread_exit(NULL);
+		return NULL;
 	}
 
 	memset(s, 0, 9);
@@ -40,14 +39,14 @@ char* serializeResponse(response* r, unsigned int* length) {
 
 response* deserializeResponse(char* s, unsigned int length) {
 	if(length != 9) {
+		errno = EINVAL;
 		return NULL;
 	}
 
 	response* r = malloc(sizeof(response));
 
 	if(r == NULL) {
-		printf("malloc error in proto\n");
-		pthread_exit(NULL);
+		return NULL;
 	}
 
 	memcpy(&(r->ident), s, sizeof(r->ident));
@@ -64,5 +63,9 @@ void printResponse(response* r) {
 }
 
 void freeResponse(response* r) {
+	if(r == NULL) {
+		return;
+	}
+
 	free(r);
 }

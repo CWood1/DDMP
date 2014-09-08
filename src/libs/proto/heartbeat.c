@@ -13,8 +13,7 @@ heartbeat* craftHeartbeat(int active) {
 	heartbeat* h = malloc(sizeof(heartbeat));
 
 	if(h == NULL) {
-		printf("malloc error in proto\n");
-		pthread_exit(NULL);
+		return NULL;
 	}
 
 	h->ident = 0;
@@ -25,10 +24,18 @@ heartbeat* craftHeartbeat(int active) {
 	}
 	
 	int random = open("/dev/urandom", O_RDONLY);
-	read(random, &(h->magic), sizeof(h->magic));
-	close(random);
-		// Generate a random number for the magic number, used to
-		// check lack of errors on the line
+
+	if(random == -1) {
+		return NULL;
+	}
+	
+	if(read(random, &(h->magic), sizeof(h->magic)) == -1) {
+		return NULL;
+	}
+
+	if(close(random) == -1) {
+		return NULL;
+	}
 
 	h->l = NULL;
 	h->n = NULL;
@@ -60,13 +67,13 @@ heartbeat* deserializeHeartbeat(char* s, unsigned int length) {
 	}
 
 	heartbeat* h = malloc(sizeof(heartbeat));
-	memset(h, 0, sizeof(heartbeat));
 
 	if(h == NULL) {
 		printf("malloc error in proto\n");
 		pthread_exit(NULL);
 	}
 
+	memset(h, 0, sizeof(heartbeat));
 	memcpy(&(h->ident), s, sizeof(h->ident));
 	memcpy(&(h->flags), s + 1, sizeof(h->flags));
 	memcpy(&(h->magic), s + 5, sizeof(h->magic));
@@ -84,6 +91,12 @@ void printHeartbeat(heartbeat* h) {
 }
 
 void freeHeartbeat(heartbeat* h) {
+	if(h == NULL) {
+		return;
+	}
+		// Doesn't warrant an error, but don't try to access
+		// unallocated memory
+
 	if(h->l != NULL) {
 		free(h->l);
 	}

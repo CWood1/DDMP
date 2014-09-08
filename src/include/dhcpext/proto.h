@@ -35,6 +35,9 @@ typedef struct {
 #define FLAG_ACTIVE 1
 #define FLAG_SHUTDOWN 2
 
+#define TYPE_HEARTBEAT 1
+#define TYPE_RESPONSE 0
+
 heartbeat* craftHeartbeat(int);
 char* serializeHeartbeat(heartbeat*, unsigned int*);
 heartbeat* deserializeHeartbeat(char*, unsigned int);
