@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 int handleCommands(int sd) {
 	size_t size;
@@ -16,6 +17,7 @@ int handleCommands(int sd) {
 	}
 
 	if(size == 0) {
+		errno = ENOMSG;
 		return -1;
 	}
 
