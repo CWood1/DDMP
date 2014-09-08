@@ -30,7 +30,7 @@ int setupSocket(int flags) {
 int createAddr(uint32_t addr, struct sockaddr_in* saddr) {
 	if(saddr == NULL) {
 		errno = EINVAL;
-		return 1;
+		return -1;
 	}
 
 	memset(saddr, 0, sizeof(struct sockaddr_in));
@@ -38,7 +38,7 @@ int createAddr(uint32_t addr, struct sockaddr_in* saddr) {
 	saddr->sin_port = htons(PORT);
 
 	if((saddr->sin_addr.s_addr = addr) == (unsigned long)INADDR_NONE) {
-		return 1;
+		return -1;
 	}
 
 	return 0;

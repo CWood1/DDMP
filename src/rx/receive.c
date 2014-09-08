@@ -15,17 +15,21 @@ int receive(struct sockaddr_in replyaddr, int sd, int pc_sd) {
 	size_t size;
 
 	if(ioctl(sd, FIONREAD, &size) != 0) {
-		return 1;
+		return -1;
 	}
 
 	if(size == 0) {
 		return 0;
+			// TODO: Handle this properly. As of right now, an
+			// empty broadcast packet will crash the entire network,
+			// necessitating a full system restart. This needs
+			// fixing.
 	}
 
 	char* buffer = malloc(size);
 
 	if(buffer == NULL) {
-		return 1;
+		return -1;
 	}
 
 	ssize_t rc;
@@ -35,19 +39,22 @@ int receive(struct sockaddr_in replyaddr, int sd, int pc_sd) {
 		(struct sockaddr*)&replyaddr, &addrlen);
 
 	if(rc < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-		return 1;
+		return -1;
 	} else if(rc >= 0) {
 		message* m = malloc(sizeof(message));
 
 		if(m == NULL) {
-			return 1;
+			return -1;
 		}
 
 		m->buffer = buffer;
 		m->addrv4 = replyaddr.sin_addr.s_addr;
 		m->bufferSize = size;
 
-		send(pc_sd, (char*)m, sizeof(message), 0);
+		if(send(pc_sd, (char*)m, sizeof(message), 0) == -1) {
+			return -1;
+		}
+
 		free(m);
 	}
 

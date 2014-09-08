@@ -33,12 +33,12 @@ void* rxmain(void* ctSock) {
 		pthread_exit(NULL);
 	}
 
-	if(createAddr(htonl(INADDR_ANY), &selfaddr) == 1) {
+	if(createAddr(htonl(INADDR_ANY), &selfaddr) == -1) {
 		printf("RX: unable to initialize self address\n");
 		pthread_exit(NULL);
 	}
 
-	if(createAddr(htonl(INADDR_ANY), &replyaddr) == 1) {
+	if(createAddr(htonl(INADDR_ANY), &replyaddr) == -1) {
 		printf("RX: unable to initialize reply address\n");
 		pthread_exit(NULL);
 	}
@@ -67,7 +67,7 @@ void* rxmain(void* ctSock) {
 		}
 
 		if(FD_ISSET(sd, &set)) {
-			if(receive(replyaddr, sd, pc_sd) == 1) {
+			if(receive(replyaddr, sd, pc_sd) == -1) {
 				printf("Error receiving traffic from network\n");
 				pthread_exit(NULL);
 			}
