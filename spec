@@ -1,5 +1,5 @@
 Mesh Extensions to DHCP
-Version 0.3.2
+Version 0.4
 Last updated: 18/07/14
 DRAFT
 
@@ -9,6 +9,7 @@ Changelog
 18/07/14 - Added new field, to indicate if message is heartbeat pulse or heartbeat response, and fixed technical error: an octet is a byte, you fucking nimrod - Connor Wood (connorwood71@gmail.com)
 05/08/14 - IP address fields unneeded in messages, provided by system already - Connor Wood (connorwood71@gmail.com)
 05/08/14 - Cleaned up more IP address field remnants - Connor Wood (connorwood71@gmail.com)
+24/09/14 - Added protocol version number in message - Connor Wood (connorwood71@gmail.com)
 
 Authors
 Connor Wood (connorwood71@gmail.com)
@@ -28,10 +29,12 @@ The Position field gives the position of the node in the global list, used to de
 It is assumed that, upon successful configuration, the current node is to begin directing its heartbeat at the active DHCP server. In this sense, a circular buffer is maintained, in priority order, of which nodes are to assume control of the DHCP responsibility, in the event of node failure.
 
 The heartbeat format is as below:
-    0      1-4     5-8
-+-------+-------+-------+---------+
-| IDENT | FLAGS | MAGIC | OPTIONS |
-+-------+-------+-------+---------+
+    0         1       2-5    6-9
++---------+-------+-------+-------+---------+
+| VERSION | IDENT | FLAGS | MAGIC | OPTIONS |
++---------+-------+-------+-------+---------+
+
+Under all circumstances, version should be 0. This may change in future versions, and will be used to differentiate different protocol versions on the same port.
 
 Ident should be 0, to indicate a heartbeat pulse. The flags field is as follows:
              1111111111222222222233
@@ -51,10 +54,12 @@ The Leaselen and Leases fields represent the length of the lease file in octets,
 Numnodes indicates the number of nodes on the network, and Nodelist is the IP of each node, sorted into order of failover. In this way, every node has a full copy of the node list, sorted to priority order, to be used in the event of node failure.
 
 The Magic number is to be set to a random number at send time, to be echoed back. The response to this packet is as follows:
-    0      1-4     5-8
-+-------+-------+-------+--------+
-| IDENT | FLAGS | MAGIC | ACTIVE |
-+-------+-------+-------+--------+
+    0         1      2-5     6-9
++---------+-------+-------+-------+--------+
+| VERSION | IDENT | FLAGS | MAGIC | ACTIVE |
++---------+-------+-------+-------+--------+
+
+As above, version should always be 0.
 
 Ident should be 1, to indicate a response; the Magic field is a copy of the magic number sent in the initial packet. The Flags field is defined as below:
 
