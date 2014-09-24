@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <errno.h>
 
 int getSentHeartbeats(lHeartbeat** sent, int tx_sd) {
 	size_t size;
@@ -19,6 +20,7 @@ int getSentHeartbeats(lHeartbeat** sent, int tx_sd) {
 	}
 
 	if(size == 0) {
+		errno = ENOMSG;
 		return -1;
 	}
 
@@ -47,6 +49,7 @@ int getReceivedMessages(int rx_sd, int rp_sd,
 	}
 
 	if(size == 0) {
+		errno = ENOMSG;
 		return -1;
 	}
 
@@ -61,16 +64,25 @@ int getReceivedMessages(int rx_sd, int rp_sd,
 	}
 
 	addrv4.s_addr = m->addrv4;
+	int r = isHeartbeat(m->buffer, m->bufferSize);
 
-	if(isHeartbeat(m->buffer, m->bufferSize)) {
+	if(r == TYPE_HEARTBEAT) {
 		heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
+
+		if(h == NULL) {
+			return -1;
+		}
+
 		handleReceivedHeartbeat(h, addrv4, rp_sd);
 		freeHeartbeat(h);
-	} else {
+	} else if(r == TYPE_RESPONSE {
 		response* r = deserializeResponse(m->buffer, m->bufferSize);
 		if(handleResponse(r, sent, unmatched, addrv4) == -1) {
 			return -1;
 		}
+	} else if(r == -1) {
+		errno = ENOMSG;
+		return -1;
 	}
 
 	free(m->buffer);
@@ -78,4 +90,3 @@ int getReceivedMessages(int rx_sd, int rp_sd,
 
 	return 0;
 }
-	
