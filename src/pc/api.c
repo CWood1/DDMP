@@ -66,6 +66,7 @@ int getReceivedMessages(int rx_sd, int rp_sd,
 		heartbeat* h = deserializeHeartbeat(m->buffer, m->bufferSize);
 		handleReceivedHeartbeat(h, addrv4, rp_sd);
 		freeHeartbeat(h);
+		// TODO: if isHeartbeat returns -1, packet is invalid. Handle.
 	} else {
 		response* r = deserializeResponse(m->buffer, m->bufferSize);
 		if(handleResponse(r, sent, unmatched, addrv4) == -1) {
