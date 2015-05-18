@@ -2,6 +2,7 @@
 #define __PROTO_H__
 
 #include <stdint.h>
+#include <string.h>
 
 typedef struct {
 	uint32_t filelen;
@@ -40,16 +41,16 @@ typedef struct {
 
 heartbeat* craftHeartbeat(int);
 char* serializeHeartbeat(heartbeat*, unsigned int*);
-heartbeat* deserializeHeartbeat(char*, unsigned int);
+heartbeat* deserializeHeartbeat(char*, size_t);
 void printHeartbeat(heartbeat*);
 void freeHeartbeat(heartbeat*);
 
 response* craftResponse(heartbeat*);
 char* serializeResponse(response*, unsigned int*);
-response* deserializeResponse(char*, unsigned int);
+response* deserializeResponse(char*, size_t);
 void printResponse(response*);
 void freeResponse(response*);
 
-int isHeartbeat(char*, unsigned int);
+int isHeartbeat(char*, size_t);
 
 #endif

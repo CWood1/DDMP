@@ -59,7 +59,7 @@ char* serializeHeartbeat(heartbeat* h, unsigned int* length) {
 	return s;
 }
 
-heartbeat* deserializeHeartbeat(char* s, unsigned int length) {
+heartbeat* deserializeHeartbeat(char* s, size_t length) {
 	if(length != 9) {
 		return NULL;
 	}

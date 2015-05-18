@@ -37,7 +37,7 @@ char* serializeResponse(response* r, unsigned int* length) {
 	return s;
 }
 
-response* deserializeResponse(char* s, unsigned int length) {
+response* deserializeResponse(char* s, size_t length) {
 	if(length != 9) {
 		errno = EINVAL;
 		return NULL;
